@@ -1,6 +1,8 @@
 <div align="center">
 
- # Zerra: A Local-First, Blue-Team Security Platform
+<img src="docs/images/Minimal%20Zerra%20Eclipse%20Logo%20(1).png" alt="Zerra Banner" width="100%" style="border-radius: 12px; margin-bottom: 24px;" />
+
+# Zerra: A Local-First, Blue-Team Security Platform
 
 **Your security engineer, running on your own machine. It tests everything locally, fixes what it finds, and sends the fixes to GitHub as pull requests.**
 
