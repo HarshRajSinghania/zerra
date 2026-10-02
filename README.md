@@ -160,6 +160,8 @@ Because Zerra operates as a blue-team security tool with access to repository co
 
 ## Architecture
 
+> 📖 **Deep Dive:** For the complete system design, Mermaid state charts, layer-by-layer specs, and threat model, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        Local Machine (Your Device)                     │
