@@ -16,6 +16,7 @@ import {
   Plus,
   ShieldCheck,
   Sparkles,
+  Star,
   X,
   Zap,
   Loader2,
@@ -136,7 +137,7 @@ export default function HomePage() {
           </a>
         </nav>
 
-        {/* Right CTA Links */}
+        {/* Right CTA Links - Colored Star Button & Join Waitlist */}
         <div className="hidden sm:flex items-center gap-3">
           <button
             onClick={() => {
@@ -144,23 +145,25 @@ export default function HomePage() {
               setWaitlistError(null);
               setShowWaitlist(true);
             }}
-            className="px-4 py-2 text-xs font-bold text-black border-2 border-black rounded-xl bg-amber-200 shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex items-center gap-1.5"
+            className="px-4 py-2.5 text-xs font-bold text-black border-2 border-black rounded-xl bg-white hover:bg-neutral-50 shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex items-center gap-2"
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Join Waitlist (300+)</span>
           </button>
 
+          {/* Colored Star Button */}
           <a
             href="https://github.com/sjsreehari/zerra"
             target="_blank"
             rel="noreferrer"
-            className="px-4 py-2 text-xs font-bold text-black border-2 border-black rounded-xl bg-white shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
+            className="px-4 py-2.5 text-xs font-black text-black border-2 border-black rounded-xl bg-[#FFE838] hover:bg-[#FFD600] shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center gap-1.5"
           >
-            Star on GitHub
+            <Star size={14} className="fill-black text-black" />
+            <span>Star on GitHub</span>
           </a>
         </div>
 
-        {/* Mobile Hamburger Button */}
+        {/* Mobile Action Buttons */}
         <div className="flex sm:hidden items-center gap-2">
           <button
             onClick={() => {
@@ -168,16 +171,25 @@ export default function HomePage() {
               setWaitlistError(null);
               setShowWaitlist(true);
             }}
-            className="px-3 py-1.5 text-xs font-bold text-black border-2 border-black rounded-lg bg-amber-200 shadow-[2px_2px_0px_#111]"
+            className="px-3 py-1.5 text-xs font-bold text-black border-2 border-black rounded-lg bg-white shadow-[2px_2px_0px_#111]"
           >
             Waitlist (300+)
           </button>
+          <a
+            href="https://github.com/sjsreehari/zerra"
+            target="_blank"
+            rel="noreferrer"
+            className="p-2 border-2 border-black rounded-xl bg-[#FFE838] shadow-[2px_2px_0px_#111] text-black"
+            aria-label="Star on GitHub"
+          >
+            <Star size={16} className="fill-black text-black" />
+          </a>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 border-2 border-black rounded-xl bg-white shadow-[2px_2px_0px_#111] text-black"
             aria-label="Toggle Navigation"
           >
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
         </div>
 
@@ -219,9 +231,10 @@ export default function HomePage() {
                 href="https://github.com/sjsreehari/zerra"
                 target="_blank"
                 rel="noreferrer"
-                className="w-full py-2.5 text-center text-xs font-bold text-black border-2 border-black rounded-xl bg-neutral-100 shadow-[2px_2px_0px_#111]"
+                className="w-full py-2.5 text-center text-xs font-black text-black border-2 border-black rounded-xl bg-[#FFE838] shadow-[2px_2px_0px_#111] flex items-center justify-center gap-1.5"
               >
-                GitHub Repository
+                <Star size={14} className="fill-black text-black" />
+                <span>Star on GitHub</span>
               </a>
             </div>
           </div>
@@ -229,73 +242,50 @@ export default function HomePage() {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-10 pt-6 sm:pt-10 pb-20 space-y-12 sm:space-y-16">
+      <main className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-10 pt-4 sm:pt-8 pb-20 space-y-12 sm:space-y-16">
         {/* Hero Section */}
-        <div className="space-y-6">
-          {/* Waitlist pill badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-amber-100 border-2 border-black rounded-full text-xs font-mono font-bold shadow-[2px_2px_0px_#111]">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-black">
-              Waitlist Live: <strong className="text-black underline">300+</strong> builders waiting • Next spot: <span className="text-[#FF6B53]">#{totalWaitlistCount + 1}</span>
-            </span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+          {/* Giant Title */}
+          <div className="lg:col-span-8">
+            <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[80px] xl:text-[84px] font-black text-black tracking-[-0.03em] leading-[1.04]">
+              Security that <br />
+              checks every commit
+            </h1>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
-            {/* Giant Title */}
-            <div className="lg:col-span-8">
-              <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[80px] xl:text-[84px] font-black text-black tracking-[-0.03em] leading-[1.04]">
-                Security that <br />
-                checks every commit
-              </h1>
+          {/* Subtitle & Quick CTAs */}
+          <div className="lg:col-span-4 space-y-5 pb-2">
+            <p className="text-sm sm:text-base text-neutral-700 leading-relaxed font-normal">
+              Your autonomous blue-team security engineer running strictly on your local machine. It tests every commit in isolated Docker sandboxes, fixes vulnerabilities with a 1-click button, and opens verified Pull Requests on push.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+              <button
+                onClick={() => {
+                  setWaitlistResult(null);
+                  setWaitlistError(null);
+                  setShowWaitlist(true);
+                }}
+                className="px-6 py-3.5 bg-black hover:bg-neutral-800 text-white font-bold text-sm rounded-xl shadow-[4px_4px_0px_#FF6B53] hover:shadow-[2px_2px_0px_#FF6B53] hover:translate-x-[2px] hover:translate-y-[2px] transition-all inline-flex items-center justify-center gap-2"
+              >
+                <span>Join the Waitlist</span>
+                <ArrowRight size={15} />
+              </button>
+
+              <button
+                onClick={copyInstallCmd}
+                className="px-4 py-3.5 bg-white border-2 border-black text-black font-mono text-xs font-semibold rounded-xl shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all inline-flex items-center justify-center gap-2"
+              >
+                {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                <span>npx zerra init</span>
+              </button>
             </div>
-
-            {/* Subtitle & Quick CTAs */}
-            <div className="lg:col-span-4 space-y-5 pb-2">
-              <p className="text-sm sm:text-base text-neutral-700 leading-relaxed font-normal">
-                Your autonomous blue-team security engineer running strictly on your local machine. It tests every commit in isolated Docker sandboxes, fixes vulnerabilities with a 1-click button, and opens verified Pull Requests on push.
-              </p>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
-                <button
-                  onClick={() => {
-                    setWaitlistResult(null);
-                    setWaitlistError(null);
-                    setShowWaitlist(true);
-                  }}
-                  className="px-6 py-3.5 bg-black hover:bg-neutral-800 text-white font-bold text-sm rounded-xl shadow-[4px_4px_0px_#FF6B53] hover:shadow-[2px_2px_0px_#FF6B53] hover:translate-x-[2px] hover:translate-y-[2px] transition-all inline-flex items-center justify-center gap-2"
-                >
-                  <span>Join the Waitlist</span>
-                  <ArrowRight size={15} />
-                </button>
-
-                <button
-                  onClick={copyInstallCmd}
-                  className="px-4 py-3.5 bg-white border-2 border-black text-black font-mono text-xs font-semibold rounded-xl shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all inline-flex items-center justify-center gap-2"
-                >
-                  {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                  <span>npx zerra init</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Minimal Zerra Eclipse Banner Showcase */}
-        <div className="w-full border-2 border-black rounded-[24px] sm:rounded-[32px] overflow-hidden shadow-[6px_6px_0px_#111] bg-black relative group">
-          <img
-            src="/images/logo.png"
-            alt="Minimal Zerra Eclipse Banner"
-            className="w-full h-48 sm:h-72 md:h-96 object-cover object-center group-hover:scale-[1.01] transition-transform duration-500"
-          />
-          <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 px-3.5 py-1.5 bg-black/80 backdrop-blur-md border border-white/20 rounded-full text-white text-xs font-mono font-medium flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#FF6B53]" />
-            <span>Zerra Autonomous Blue-Team Security Engine</span>
           </div>
         </div>
 
         {/* Feature Cards Grid (Neo-Brutalist Layout) */}
-        <div id="features" className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pt-2">
-          {/* Left Column: Big Feature Card */}
+        <div id="features" className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left Column: Big Feature Card with Enhanced Code Diff Box */}
           <div className="lg:col-span-7 bg-white border-2 border-black rounded-[24px] sm:rounded-[32px] p-6 sm:p-9 shadow-[6px_6px_0px_#111] space-y-6 flex flex-col justify-between min-h-[500px]">
             {/* Header with Title and Version */}
             <div className="space-y-3">
@@ -318,38 +308,66 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Visual Isometric Stack / Sandbox Simulator */}
-            <div className="relative my-2 p-4 sm:p-5 bg-[#F8F8FA] border-2 border-black rounded-2xl shadow-[4px_4px_0px_#111] overflow-hidden space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-neutral-500 border-b border-neutral-200 pb-2">
-                <span className="flex items-center gap-1.5 text-black font-bold">
-                  <GitCommit size={14} className="text-[#FF6B53] shrink-0" />
-                  <span className="truncate">commit 8f2b41c (feat: checkout endpoint)</span>
-                </span>
-                <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-semibold border border-emerald-300 text-[11px] shrink-0">
-                  ● All Tests Passed
-                </span>
-              </div>
-
-              {/* Layer 1: SAST Finding */}
-              <div className="p-3 bg-white border border-neutral-300 rounded-xl space-y-1.5 text-xs font-mono">
-                <div className="flex flex-wrap items-center justify-between gap-1">
-                  <span className="text-red-600 font-bold">SAST • SQL Injection (CWE-89)</span>
-                  <span className="text-neutral-400 text-[11px]">internal/db/users.go:42</span>
+            {/* Visual Isometric Stack / Sandbox Simulator with Gorgeous Dark Terminal UI */}
+            <div className="relative my-2 bg-[#0E131F] text-neutral-200 border-2 border-black rounded-2xl shadow-[5px_5px_0px_#111] overflow-hidden space-y-3.5 p-4 sm:p-5">
+              {/* Terminal Window Header */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800 pb-3 text-xs font-mono">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]" />
+                  <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]" />
+                  <span className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]" />
+                  <span className="text-neutral-400 font-bold ml-2 flex items-center gap-1.5">
+                    <GitCommit size={14} className="text-[#FF6B53]" />
+                    <span className="text-white">commit 8f2b41c</span>
+                    <span className="text-neutral-400 font-normal hidden sm:inline">(feat: checkout endpoint)</span>
+                  </span>
                 </div>
-                <div className="text-neutral-700 bg-red-50/60 p-2.5 rounded border border-red-200 text-[11px] overflow-x-auto whitespace-pre font-mono">
-                  <span className="text-red-500 line-through">- query := &quot;SELECT * FROM users WHERE id = &apos;&quot; + id + &quot;&apos;&quot;</span>
-                  {"\n"}
-                  <span className="text-emerald-600 font-bold">+ row := db.QueryRow(&quot;SELECT * FROM users WHERE id = $1&quot;, id)</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Sandbox: All Tests Passed</span>
                 </div>
               </div>
 
-              {/* Layer 2: Verification Status */}
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-1">
-                <span className="flex items-center gap-1.5 text-neutral-600">
-                  <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
+              {/* SAST Finding Details */}
+              <div className="bg-[#161B26] border border-neutral-800 rounded-xl p-3 sm:p-4 space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-black uppercase tracking-wider">
+                      Critical
+                    </span>
+                    <span className="text-white font-bold">SAST • SQL Injection (CWE-89)</span>
+                  </div>
+                  <span className="text-neutral-400 text-[11px] font-mono">
+                    internal/db/users.go:42
+                  </span>
+                </div>
+
+                {/* Polished Code Diff Block */}
+                <div className="bg-[#090D16] border border-neutral-800 rounded-lg p-3 text-[11px] sm:text-xs font-mono overflow-x-auto leading-relaxed">
+                  <div className="text-neutral-500 select-none text-[10px] pb-1">@@ -41,3 +41,3 @@ func GetUser(id string) error</div>
+                  <div className="text-neutral-500 select-none"> 41 |   // Fetch user record securely</div>
+                  <div className="bg-red-950/40 text-red-300 px-2 py-1 -mx-2 rounded border-l-2 border-red-500 my-0.5 whitespace-pre">
+                    <span className="text-red-400 select-none mr-2 font-bold">- 42 |</span>
+                    <span className="line-through decoration-red-400/60">query := &quot;SELECT * FROM users WHERE id = &apos;&quot; + id + &quot;&apos;&quot;</span>
+                  </div>
+                  <div className="bg-emerald-950/50 text-emerald-200 px-2 py-1 -mx-2 rounded border-l-2 border-emerald-400 font-semibold my-0.5 whitespace-pre">
+                    <span className="text-emerald-400 select-none mr-2 font-bold">+ 42 |</span>
+                    <span>row := db.QueryRow(&quot;SELECT * FROM users WHERE id = $1&quot;, id)</span>
+                  </div>
+                  <div className="text-neutral-500 select-none"> 43 |   return row.Scan(&amp;u.ID, &amp;u.Name)</div>
+                </div>
+              </div>
+
+              {/* Status Bar / Guarantees */}
+              <div className="flex flex-wrap items-center justify-between gap-3 text-xs pt-1 text-neutral-400 font-mono">
+                <span className="flex items-center gap-1.5 text-neutral-300 text-[11px]">
+                  <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
                   <span>Isolated network bridge (zero internet outbound)</span>
                 </span>
-                <span className="font-mono text-[11px] text-neutral-400">0 regressions</span>
+                <div className="flex items-center gap-3 text-[11px]">
+                  <span className="text-emerald-400 font-bold">✓ 0 regressions</span>
+                  <span className="text-neutral-500 hidden sm:inline">verified in 142ms</span>
+                </div>
               </div>
             </div>
 
@@ -704,7 +722,6 @@ export default function HomePage() {
                 </button>
 
                 <p className="text-[11px] text-center text-neutral-400 font-mono">
-                  🔒 Zero spam. 100% encrypted & private.
                 </p>
               </form>
             )}
