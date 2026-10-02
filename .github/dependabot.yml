@@ -1,0 +1,54 @@
+version: 2
+updates:
+  # Node.js / npm (monorepo root + all workspaces)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    groups:
+      typescript-tooling:
+        patterns: ["typescript", "tsx", "vitest", "@types/*"]
+      prisma:
+        patterns: ["prisma", "@prisma/*"]
+    labels:
+      - "area: infra"
+      - "chore"
+
+  # Python (agent)
+  - package-ecosystem: "pip"
+    directory: "/agent"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "area: agent"
+      - "chore"
+
+  # Go (scanner worker)
+  - package-ecosystem: "gomod"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "area: scanner"
+      - "chore"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "area: infra"
+      - "chore"

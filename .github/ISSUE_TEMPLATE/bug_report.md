@@ -1,5 +1,5 @@
 ---
-name: "🐛 Bug Report"
+name: " Bug Report"
 about: "Report a reproducible bug in Zerra"
 title: "bug: "
 labels: ["bug", "needs-triage"]

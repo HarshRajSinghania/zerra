@@ -1,0 +1,136 @@
+# GitHub Labels for Zerra
+# This file is used by the github-label-sync tool or can be applied manually.
+# Run: npx github-label-sync --access-token $GITHUB_TOKEN --labels .github/labels.yml sjsreehari/zerra
+
+# ─── Type ──────────────────────────────────────────────────────────────────
+- name: "bug"
+  color: "d73a4a"
+  description: "Something isn't working"
+
+- name: "enhancement"
+  color: "7057ff"
+  description: "New feature or improvement"
+
+- name: "security-rule"
+  color: "e11d48"
+  description: "New or improved Semgrep / secret-scan rule"
+
+- name: "documentation"
+  color: "0075ca"
+  description: "Improvements or additions to documentation"
+
+- name: "question"
+  color: "d876e3"
+  description: "Further information is requested"
+
+- name: "refactor"
+  color: "f9d0c4"
+  description: "Code restructure with no behavior change"
+
+- name: "performance"
+  color: "fbca04"
+  description: "Improvement to runtime or resource usage"
+
+# ─── Status ────────────────────────────────────────────────────────────────
+- name: "needs-triage"
+  color: "ededed"
+  description: "Not yet reviewed by a maintainer"
+
+- name: "confirmed"
+  color: "0e8a16"
+  description: "Issue confirmed and reproducible"
+
+- name: "in-progress"
+  color: "1d76db"
+  description: "Actively being worked on"
+
+- name: "blocked"
+  color: "b60205"
+  description: "Blocked by another issue or external dependency"
+
+- name: "stale"
+  color: "e4e669"
+  description: "No activity for 30+ days"
+
+- name: "wontfix"
+  color: "ffffff"
+  description: "This will not be worked on"
+
+- name: "duplicate"
+  color: "cfd3d7"
+  description: "This issue or PR already exists"
+
+- name: "invalid"
+  color: "e4e669"
+  description: "This doesn't seem right"
+
+# ─── Effort / Experience ───────────────────────────────────────────────────
+- name: "good first issue"
+  color: "7057ff"
+  description: "Good for newcomers — clear scope and acceptance criteria"
+
+- name: "help wanted"
+  color: "008672"
+  description: "Extra attention needed — community help appreciated"
+
+- name: "complexity: low"
+  color: "c2e0c6"
+  description: "Small, well-scoped change"
+
+- name: "complexity: medium"
+  color: "fef2c0"
+  description: "Moderate effort required"
+
+- name: "complexity: high"
+  color: "f9d0c4"
+  description: "Significant effort — likely spans multiple files or services"
+
+# ─── Area / Component ──────────────────────────────────────────────────────
+- name: "area: webhook"
+  color: "bfd4f2"
+  description: "NestJS webhook ingestion service"
+
+- name: "area: scanner"
+  color: "bfd4f2"
+  description: "Go scanner worker (Semgrep, Syft, OSV)"
+
+- name: "area: agent"
+  color: "bfd4f2"
+  description: "Python AI agent / LangGraph orchestration"
+
+- name: "area: frontend"
+  color: "bfd4f2"
+  description: "Next.js dashboard"
+
+- name: "area: cli"
+  color: "bfd4f2"
+  description: "@zerra/cli"
+
+- name: "area: infra"
+  color: "bfd4f2"
+  description: "Docker, CI/CD, infrastructure"
+
+- name: "area: docs"
+  color: "bfd4f2"
+  description: "Documentation and guides"
+
+- name: "area: auth"
+  color: "bfd4f2"
+  description: "GitHub App auth, keychain, credential handling"
+
+# ─── Priority ──────────────────────────────────────────────────────────────
+- name: "priority: critical"
+  color: "b60205"
+  description: "Must fix immediately — security or data integrity risk"
+
+- name: "priority: high"
+  color: "e11d48"
+  description: "Important — should be addressed in the next release"
+
+- name: "priority: medium"
+  color: "fbca04"
+  description: "Normal priority"
+
+- name: "priority: low"
+  color: "c2e0c6"
+  description: "Nice to have — no urgency"
