@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<"sast" | "secrets" | "sca" | "mcp">("sast");
+  const [activeTab, setActiveTab] = useState<"sast" | "secrets" | "sca" | "iac" | "db">("sast");
   const [prSimulated, setPrSimulated] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -42,40 +42,55 @@ export default function HomePage() {
       file: "internal/db/users.go:42",
       vulnSnippet: `// Vulnerable: Unsanitized SQL string concatenation\nquery := "SELECT * FROM users WHERE id = '" + userID + "'"\nrow := db.QueryRow(query)`,
       fixSnippet: `// Remediation: Parameterized query placeholder ($1)\nrow := db.QueryRow("SELECT * FROM users WHERE id = $1", userID)`,
-      explanation: "Zerra detected unparameterized user input in SQL statement. Auto-PR replaces concatenation with safe $1 positional argument.",
+      explanation: "Zerra detected unparameterized user input in SQL statement. Verified patch replaces concatenation with safe positional argument and passes sandbox regression tests.",
       branch: "zerra/fix-cwe-89-users-go",
       severity: "CRITICAL",
       cvss: 9.8,
+      sandbox: "Verified in Docker sandbox (go test ./... PASS)",
     },
     secrets: {
       category: "Secrets • Plaintext Stripe API Key (CWE-798)",
       file: "config/payments.py:14",
       vulnSnippet: `# Compromised: Hardcoded live Stripe secret key\nSTRIPE_SECRET_KEY = "sk_test_51NABC1234567890abcdefghijklmnopqrstuvwxyz"`,
       fixSnippet: `# Remediation: Load from secure environment variable\nimport os\nSTRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")`,
-      explanation: "Live production credential exposed in source tree. Auto-PR moves key to environment variable and alerts on WhatsApp & Discord.",
+      explanation: "Live production credential exposed in source tree. Auto-PR migrates key to environment variable, updates .gitignore, and rotates secret.",
       branch: "zerra/fix-cwe-798-stripe-key",
       severity: "CRITICAL",
       cvss: 9.9,
+      sandbox: "Verified in Docker sandbox (git apply --check PASS)",
     },
     sca: {
       category: "SCA • Vulnerable Dependency urllib3 (CVE-2023-45803)",
       file: "requirements.txt:18",
       vulnSnippet: `# Vulnerable: urllib3 < 2.0.7 leaks auth headers on redirect\nurllib3==1.26.15`,
-      fixSnippet: `# Remediation: Upgrade to patched version\nurllib3>=2.0.7`,
-      explanation: "Known supply-chain CVE with public exploit. Auto-PR bumps package version constraint and verifies compatibility.",
+      fixSnippet: `# Remediation: Upgrade to nearest safe patched release\nurllib3>=2.0.7`,
+      explanation: "Known supply-chain CVE with public exploit. Auto-PR bumps package constraint and proves zero breaking changes by executing project test suite in sandbox.",
       branch: "zerra/fix-cve-2023-45803-urllib3",
       severity: "HIGH",
       cvss: 7.5,
+      sandbox: "Verified in Docker sandbox (pytest -v PASS)",
     },
-    mcp: {
-      category: "AI Safety • Agentic Tool Injection (OWASP LLM07:2025)",
-      file: "agents/orchestrator.py:68",
-      vulnSnippet: `# Unchecked MCP tool invocation from LLM output\ntool_name = llm_response["tool"]\neval(f"tools.{tool_name}(**args)")`,
-      fixSnippet: `# Strict whitelist validation and isolated execution\nALLOWED_TOOLS = {"search_catalog", "read_order"}\nif tool_name not in ALLOWED_TOOLS:\n    raise SecurityException("Untrusted MCP tool call blocked")`,
-      explanation: "Protects autonomous LLM workflows from prompt injection and unauthorized tool execution.",
-      branch: "zerra/fix-llm07-mcp-whitelist",
+    iac: {
+      category: "IaC & CI/CD • GitHub Actions Write-All Permissions (CWE-732)",
+      file: ".github/workflows/deploy.yml:12",
+      vulnSnippet: `# Insecure: Excessive workflow permissions grant write-all token\npermissions: write-all`,
+      fixSnippet: `# Remediation: Apply principle of least privilege\npermissions:\n  contents: read\n  pull-requests: write\n  issues: write`,
+      explanation: "Over-privileged CI/CD execution context flagged. Auto-PR scopes token permissions strictly to required pull-request and issue creation capabilities.",
+      branch: "zerra/fix-actions-least-privilege",
       severity: "HIGH",
-      cvss: 8.4,
+      cvss: 8.2,
+      sandbox: "Verified in Docker sandbox (actionlint PASS)",
+    },
+    db: {
+      category: "Database Audit • Missing Row-Level Security (CWE-284)",
+      file: "db/migrations/20260901_orders.sql:28",
+      vulnSnippet: `-- Missing tenant isolation policy on sensitive table\nCREATE TABLE customer_orders (\n  id UUID PRIMARY KEY,\n  tenant_id UUID NOT NULL,\n  amount DECIMAL\n);`,
+      fixSnippet: `-- Hardening: Enable Row-Level Security (RLS) & tenant isolation\nALTER TABLE customer_orders ENABLE ROW LEVEL SECURITY;\nCREATE POLICY tenant_isolation ON customer_orders\n  USING (tenant_id = current_setting('app.current_tenant')::UUID);`,
+      explanation: "Unenforced multi-tenant data boundary. Auto-PR enables PostgreSQL Row-Level Security and executes synthetic tenant isolation tests in throwaway DB sandbox.",
+      branch: "zerra/fix-db-rls-tenant-isolation",
+      severity: "CRITICAL",
+      cvss: 9.1,
+      sandbox: "Verified in Throwaway DB sandbox (pgTAP isolation PASS)",
     },
   };
 
@@ -165,21 +180,28 @@ export default function HomePage() {
       <main className="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-28 text-center space-y-8">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.1] text-xs font-medium text-blue-300 shadow-sm backdrop-blur-md">
           <Sparkles size={13} className="text-amber-400" />
-          <span>Continuous Git Repository Security</span>
+          <span>Local-First · Self-Hosted Blue-Team Security</span>
           <span className="text-zinc-500">|</span>
-          <span className="text-zinc-400">Zero-Human-Toil Auto-PRs</span>
+          <span className="text-emerald-400">Isolated Docker Sandbox Proofs</span>
         </div>
 
         <div className="space-y-4 max-w-4xl mx-auto">
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.1]">
-            Autonomous Repo Security.{" "}
+            A Local-First,{" "}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-400">
-              Instant Auto-PR Defense.
+              Blue-Team Security Platform.
             </span>
           </h1>
-          <p className="text-base sm:text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-            Give Zerra any Git repository. It scans every commit and PR across SAST, dependency CVEs, and secret leaks, automatically opens verified remediation Pull Requests, and dispatches real-time alerts across WhatsApp, Discord, Teams, and Email.
+          <p className="text-base sm:text-lg text-zinc-300 max-w-3xl mx-auto leading-relaxed">
+            Your personal security engineer, running strictly on your own workstation. Zerra provisions isolated Docker sandboxes, tests code across SAST, dependency supply chains, and databases, verifies every fix against your real test suite, and opens GitHub Pull Requests directly from your device.
           </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs text-zinc-400">
+            <span className="flex items-center gap-1"><CheckCircle2 size={13} className="text-emerald-400" /> 100% Local-first (No SaaS Code Uploads)</span>
+            <span>•</span>
+            <span className="flex items-center gap-1"><CheckCircle2 size={13} className="text-emerald-400" /> Blue-Team Defense Only</span>
+            <span>•</span>
+            <span className="flex items-center gap-1"><CheckCircle2 size={13} className="text-emerald-400" /> Human-in-the-Loop PRs</span>
+          </div>
         </div>
 
         {/* Hero CTAs */}
@@ -189,7 +211,7 @@ export default function HomePage() {
             className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             <GitBranch size={16} className="text-white" />
-            <span>Connect Repository</span>
+            <span>Connect Local Project</span>
             <ArrowRight size={15} />
           </Link>
 
@@ -198,20 +220,23 @@ export default function HomePage() {
             className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white/[0.05] border border-white/[0.12] hover:bg-white/[0.08] hover:border-white/[0.2] text-white font-semibold text-sm transition-all"
           >
             <ShieldCheck size={16} className="text-emerald-400" />
-            <span>Explore Console</span>
+            <span>Open Security Console</span>
           </Link>
         </div>
 
         {/* Multi-Channel Alerts Marquee */}
         <div className="pt-8 border-t border-white/[0.06] flex flex-wrap items-center justify-center gap-4 text-xs font-mono text-zinc-400">
-          <span className="text-zinc-500">Incident Alert Channels:</span>
+          <span className="text-zinc-500">Integrated Delivery & Alert Channels:</span>
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400">
+            <GitBranch size={13} /> GitHub Pull Requests
+          </span>
           <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
             <MessageCircle size={13} /> WhatsApp Cloud API
           </span>
           <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
             <Zap size={13} /> Discord Webhook
           </span>
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400">
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
             <Users size={13} /> Microsoft Teams
           </span>
           <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
@@ -228,17 +253,18 @@ export default function HomePage() {
                 <span className="w-3 h-3 rounded-full bg-yellow-500/80 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
                 <span className="text-xs font-mono text-zinc-400 ml-2">
-                  zerra-autonomous-remediation-engine.sh
+                  zerra-verification-gate // sandbox-isolated
                 </span>
               </div>
 
               {/* Selector Tabs */}
-              <div className="flex items-center gap-1 bg-white/[0.04] p-1 rounded-xl border border-white/[0.08]">
+              <div className="flex flex-wrap items-center gap-1 bg-white/[0.04] p-1 rounded-xl border border-white/[0.08]">
                 {[
-                  { key: "sast", label: "SQL Injection" },
-                  { key: "secrets", label: "Stripe Secret" },
-                  { key: "sca", label: "CVE Dependency" },
-                  { key: "mcp", label: "Agentic MCP" },
+                  { key: "sast", label: "1. SAST (SQLi)" },
+                  { key: "secrets", label: "2. Secrets Leak" },
+                  { key: "sca", label: "3. Supply Chain" },
+                  { key: "iac", label: "4. IaC & CI/CD" },
+                  { key: "db", label: "5. DB Security" },
                 ].map((tab) => (
                   <button
                     key={tab.key}
@@ -326,25 +352,68 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 4 Pillars of Continuous Security */}
-        <div id="features" className="pt-24 text-left space-y-12">
-          <div className="text-center space-y-3 max-w-2xl mx-auto">
+        {/* 5-Stage Verification Pipeline Architecture */}
+        <div className="pt-20 text-left space-y-8">
+          <div className="text-center space-y-3 max-w-3xl mx-auto">
+            <span className="text-xs font-mono font-semibold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+              STRICT VERIFICATION GATEWAY
+            </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-              Full-Spectrum Autonomous Git Security
+              The 5-Stage Blue-Team Pipeline
             </h2>
             <p className="text-sm text-zinc-400">
-              Unlike static scanners that generate noisy PDF reports, Zerra actively remediates vulnerabilities by committing working code directly to your repositories.
+              Nothing reaches GitHub until it has been synthesized, applied, tested, and proved inside a local, network-isolated Docker sandbox on your device.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-2">
+              <div className="text-xs font-mono font-bold text-blue-400">STAGE 01</div>
+              <h4 className="text-sm font-bold text-white">1. Detect</h4>
+              <p className="text-xs text-zinc-400">SAST AST patterns, secret entropy, Syft SBOM CVEs, and database audits run locally.</p>
+            </div>
+            <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-2">
+              <div className="text-xs font-mono font-bold text-amber-400">STAGE 02</div>
+              <h4 className="text-sm font-bold text-white">2. Triage</h4>
+              <p className="text-xs text-zinc-400">Deduplicates findings, evaluates CVSS severity, maps to CWE / OWASP Top 10, and applies policy.</p>
+            </div>
+            <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-2">
+              <div className="text-xs font-mono font-bold text-purple-400">STAGE 03</div>
+              <h4 className="text-sm font-bold text-white">3. Synthesize Fix</h4>
+              <p className="text-xs text-zinc-400">Generates minimal unified diff patch with confidence scoring via local Ollama or cloud LLM.</p>
+            </div>
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-4 space-y-2">
+              <div className="text-xs font-mono font-bold text-emerald-400">STAGE 04 (GATE)</div>
+              <h4 className="text-sm font-bold text-emerald-300">4. Sandbox Gate</h4>
+              <p className="text-xs text-zinc-300">Docker container runs <code className="text-emerald-400 text-[11px]">git apply</code>, your test suite, and re-scans to prove fix with zero regressions.</p>
+            </div>
+            <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-2">
+              <div className="text-xs font-mono font-bold text-cyan-400">STAGE 05</div>
+              <h4 className="text-sm font-bold text-white">5. Safe Delivery</h4>
+              <p className="text-xs text-zinc-400">Creates local branch and opens a GitHub Pull Request or Issue from your machine. Never touches main.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 6 Pillars of Continuous Security */}
+        <div id="features" className="pt-20 text-left space-y-12">
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              6 Deep Defense Layers
+            </h2>
+            <p className="text-sm text-zinc-400">
+              Comprehensive blue-team coverage spanning code, dependencies, credentials, databases, infrastructure, and automated sandboxes.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-3 hover:border-blue-500/40 transition-all">
               <span className="p-3 rounded-xl bg-blue-500/10 text-blue-400 inline-block border border-blue-500/20">
                 <Code2 size={20} />
               </span>
-              <h3 className="text-base font-bold text-white">Rule-Based AST SAST</h3>
+              <h3 className="text-base font-bold text-white">1. Code Security (SAST)</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Detects SQL injection, OS command execution, XSS, path traversal, and unsafe deserialization across Python, Go, TypeScript, Java, and Docker.
+                Powered by Semgrep and custom rules. Detects SQL injection, Command Injection, XSS, SSRF, Path Traversal, and Insecure Deserialization across Python, Go, TypeScript, and Java.
               </p>
             </div>
 
@@ -352,19 +421,39 @@ export default function HomePage() {
               <span className="p-3 rounded-xl bg-amber-500/10 text-amber-400 inline-block border border-amber-500/20">
                 <ShieldAlert size={20} />
               </span>
-              <h3 className="text-base font-bold text-white">25+ Secret Detectors</h3>
+              <h3 className="text-base font-bold text-white">2. Secrets & Git History</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Regex and Shannon entropy analysis catches AWS keys, Stripe tokens, GitHub PATs, Slack webhooks, private keys, and high-entropy API secrets before merge.
+                Entropy analysis and 25+ pattern detectors catch live API keys, private keys, and tokens. Audits historical Git commits and automates migration to environment variables.
               </p>
             </div>
 
             <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-3 hover:border-emerald-500/40 transition-all">
               <span className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 inline-block border border-emerald-500/20">
-                <GitBranch size={20} />
+                <Layers size={20} />
               </span>
-              <h3 className="text-base font-bold text-white">Automated Fix PRs</h3>
+              <h3 className="text-base font-bold text-white">3. Supply Chain & SCA</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Synthesizes patches, branches off `main`, commits corrected code, and opens a GitHub Pull Request with explanations and CVSS impact.
+                Syft SBOM generation and real-time queries to OSV.dev across package.json, requirements.txt, go.mod, and Cargo.toml. Prepares and verifies safe version bumps.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-3 hover:border-indigo-500/40 transition-all">
+              <span className="p-3 rounded-xl bg-indigo-500/10 text-indigo-400 inline-block border border-indigo-500/20">
+                <Cpu size={20} />
+              </span>
+              <h3 className="text-base font-bold text-white">4. Local Database Audits</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Audits local PostgreSQL, MySQL, MongoDB, Redis, and SQLite instances for default passwords, missing authentication, plaintext password fields, and unconfigured Row-Level Security.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-3 hover:border-cyan-500/40 transition-all">
+              <span className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400 inline-block border border-cyan-500/20">
+                <Lock size={20} />
+              </span>
+              <h3 className="text-base font-bold text-white">5. Isolated Docker Sandboxes</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Disposable app containers and throwaway databases seeded strictly with synthetic mock data. Runs with zero outbound internet access to prevent credential leakage.
               </p>
             </div>
 
@@ -372,9 +461,9 @@ export default function HomePage() {
               <span className="p-3 rounded-xl bg-purple-500/10 text-purple-400 inline-block border border-purple-500/20">
                 <Award size={20} />
               </span>
-              <h3 className="text-base font-bold text-white">OASIS SARIF 2.1.0</h3>
+              <h3 className="text-base font-bold text-white">6. IaC & CI/CD Pipeline Review</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Industry-standard SARIF export compatible with GitHub Code Scanning alerts, GitLab Security Dashboards, and automated CI/CD gating.
+                Scans Dockerfiles for non-root enforcement and pinned hashes, checks Terraform and K8s manifests, and detects over-privileged write-all GitHub Actions tokens.
               </p>
             </div>
           </div>
@@ -426,6 +515,62 @@ export default function HomePage() {
               <p className="text-xs text-zinc-400 leading-relaxed">
                 Clean HTML security digests with executive posture summary and tabular findings sent via SMTP.
               </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Local Credential Vault & Zero-Telemetry Privacy Guarantees */}
+        <div id="compliance" className="pt-24 text-left space-y-8">
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <span className="text-xs font-mono font-semibold text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
+              ZERO-TELEMETRY GUARANTEE
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              Your Code & Credentials Never Leave Your Machine
+            </h2>
+            <p className="text-sm text-zinc-400">
+              Zerra is engineered from the ground up for strict sovereign privacy, enterprise compliance, and zero cloud dependency.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-3">
+              <div className="h-10 w-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold">
+                <Lock size={20} />
+              </div>
+              <h3 className="text-base font-bold text-white">OS-Native Keychain Vault</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                GitHub PATs, SSH keys, and database credentials are stored in your operating system keychain (Windows Credential Manager, macOS Keychain, Linux Secret Service).
+              </p>
+              <div className="text-[11px] text-zinc-500 font-mono">
+                Fallback: AES-256-GCM + scrypt (0o600)
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-3">
+              <div className="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">
+                <ShieldCheck size={20} />
+              </div>
+              <h3 className="text-base font-bold text-white">Disposable Docker Sandboxes</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Every patch verification and test execution happens in disposable containers with synthetic mock data. Sandboxes run on an internal network bridge with zero outbound internet access.
+              </p>
+              <div className="text-[11px] text-emerald-400 font-mono">
+                Automatic clean teardown on finish
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-3">
+              <div className="h-10 w-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 font-bold">
+                <Award size={20} />
+              </div>
+              <h3 className="text-base font-bold text-white">Tamper-Evident Audit & SARIF</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Generates OASIS SARIF v2.1.0 for GitHub Security tab integration, SPDX/CycloneDX SBOMs, and cryptographic hash-chained audit trails of every scan decision.
+              </p>
+              <div className="text-[11px] text-purple-400 font-mono">
+                OWASP Top 10 & CWE mapped
+              </div>
             </div>
           </div>
         </div>
