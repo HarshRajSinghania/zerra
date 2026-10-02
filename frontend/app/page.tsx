@@ -32,7 +32,7 @@ export default function HomePage() {
   const [prCreated, setPrCreated] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Waitlist state
+  // Waitlist modal state
   const [showWaitlist, setShowWaitlist] = useState(false);
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,16 +43,16 @@ export default function HomePage() {
   } | null>(null);
   const [waitlistError, setWaitlistError] = useState<string | null>(null);
 
-  // Live count state fetched from Supabase server API
-  const [totalWaitlistCount, setTotalWaitlistCount] = useState<number>(300);
+  // Live access spot state fetched from server API
+  const [nextSpot, setNextSpot] = useState<number | null>(null);
 
   useEffect(() => {
-    // Fetch live waitlist count from server API (which queries Supabase securely)
+    // Fetch live waitlist count from server API
     fetch("/api/waitlist")
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && typeof data.totalCount === "number") {
-          setTotalWaitlistCount(data.totalCount);
+        if (data.success && typeof data.nextSpot === "number") {
+          setNextSpot(data.nextSpot);
         }
       })
       .catch((err) => console.warn("Could not load waitlist count:", err));
@@ -87,12 +87,12 @@ export default function HomePage() {
           alreadyRegistered: data.alreadyRegistered,
           message: data.message,
         });
-        if (!data.alreadyRegistered && data.position > totalWaitlistCount) {
-          setTotalWaitlistCount(data.position);
+        if (!data.alreadyRegistered && data.position >= nextSpot) {
+          setNextSpot(data.position + 1);
         }
       }
     } catch (err) {
-      setWaitlistError("Network error. Please check your connection.");
+      setWaitlistError("Network connection interrupted. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -137,7 +137,7 @@ export default function HomePage() {
           </a>
         </nav>
 
-        {/* Right CTA Links - Colored Star Button & Join Waitlist */}
+        {/* Right CTA Links - Join Waitlist & Colored Star Button */}
         <div className="hidden sm:flex items-center gap-3">
           <button
             onClick={() => {
@@ -148,7 +148,7 @@ export default function HomePage() {
             className="px-4 py-2.5 text-xs font-bold text-black border-2 border-black rounded-xl bg-white hover:bg-neutral-50 shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex items-center gap-2"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Join Waitlist (300+)</span>
+            <span>Join Waitlist</span>
           </button>
 
           {/* Colored Star Button */}
@@ -173,7 +173,7 @@ export default function HomePage() {
             }}
             className="px-3 py-1.5 text-xs font-bold text-black border-2 border-black rounded-lg bg-white shadow-[2px_2px_0px_#111]"
           >
-            Waitlist (300+)
+            Join Waitlist
           </button>
           <a
             href="https://github.com/sjsreehari/zerra"
@@ -285,7 +285,7 @@ export default function HomePage() {
 
         {/* Feature Cards Grid (Neo-Brutalist Layout) */}
         <div id="features" className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Big Feature Card with Enhanced Code Diff Box */}
+          {/* Left Column: Big Feature Card with Exact Reverted Classic Neo-Brutalist Diff */}
           <div className="lg:col-span-7 bg-white border-2 border-black rounded-[24px] sm:rounded-[32px] p-6 sm:p-9 shadow-[6px_6px_0px_#111] space-y-6 flex flex-col justify-between min-h-[500px]">
             {/* Header with Title and Version */}
             <div className="space-y-3">
@@ -308,66 +308,38 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Visual Isometric Stack / Sandbox Simulator with Gorgeous Dark Terminal UI */}
-            <div className="relative my-2 bg-[#0E131F] text-neutral-200 border-2 border-black rounded-2xl shadow-[5px_5px_0px_#111] overflow-hidden space-y-3.5 p-4 sm:p-5">
-              {/* Terminal Window Header */}
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800 pb-3 text-xs font-mono">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]" />
-                  <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]" />
-                  <span className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]" />
-                  <span className="text-neutral-400 font-bold ml-2 flex items-center gap-1.5">
-                    <GitCommit size={14} className="text-[#FF6B53]" />
-                    <span className="text-white">commit 8f2b41c</span>
-                    <span className="text-neutral-400 font-normal hidden sm:inline">(feat: checkout endpoint)</span>
-                  </span>
+            {/* Visual Isometric Stack / Sandbox Simulator (Original Reverted Clean Neo-Brutalist Style) */}
+            <div className="relative my-4 p-5 bg-[#F8F8FA] border-2 border-black rounded-2xl shadow-[4px_4px_0px_#111] overflow-hidden space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-neutral-500 border-b border-neutral-200 pb-2">
+                <span className="flex items-center gap-1.5 text-black font-bold">
+                  <GitCommit size={14} className="text-[#FF6B53] shrink-0" />
+                  <span className="truncate">commit 8f2b41c (feat: checkout endpoint)</span>
+                </span>
+                <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-semibold border border-emerald-300 text-[11px] shrink-0">
+                  ● Sandbox: All Tests Passed
+                </span>
+              </div>
+
+              {/* Layer 1: SAST Finding */}
+              <div className="p-3 bg-white border border-neutral-300 rounded-xl space-y-1.5 text-xs font-mono">
+                <div className="flex flex-wrap items-center justify-between gap-1">
+                  <span className="text-red-600 font-bold">SAST • SQL Injection (CWE-89)</span>
+                  <span className="text-neutral-400 text-[11px]">internal/db/users.go:42</span>
                 </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>Sandbox: All Tests Passed</span>
+                <div className="text-neutral-700 bg-red-50/60 p-2 rounded border border-red-200 text-[11px] overflow-x-auto whitespace-pre font-mono">
+                  <span className="text-red-500 line-through">- query := &quot;SELECT * FROM users WHERE id = &apos;&quot; + id + &quot;&apos;&quot;</span>
+                  {"\n"}
+                  <span className="text-emerald-600 font-bold">+ row := db.QueryRow(&quot;SELECT * FROM users WHERE id = $1&quot;, id)</span>
                 </div>
               </div>
 
-              {/* SAST Finding Details */}
-              <div className="bg-[#161B26] border border-neutral-800 rounded-xl p-3 sm:p-4 space-y-2.5">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-black uppercase tracking-wider">
-                      Critical
-                    </span>
-                    <span className="text-white font-bold">SAST • SQL Injection (CWE-89)</span>
-                  </div>
-                  <span className="text-neutral-400 text-[11px] font-mono">
-                    internal/db/users.go:42
-                  </span>
-                </div>
-
-                {/* Polished Code Diff Block */}
-                <div className="bg-[#090D16] border border-neutral-800 rounded-lg p-3 text-[11px] sm:text-xs font-mono overflow-x-auto leading-relaxed">
-                  <div className="text-neutral-500 select-none text-[10px] pb-1">@@ -41,3 +41,3 @@ func GetUser(id string) error</div>
-                  <div className="text-neutral-500 select-none"> 41 |   // Fetch user record securely</div>
-                  <div className="bg-red-950/40 text-red-300 px-2 py-1 -mx-2 rounded border-l-2 border-red-500 my-0.5 whitespace-pre">
-                    <span className="text-red-400 select-none mr-2 font-bold">- 42 |</span>
-                    <span className="line-through decoration-red-400/60">query := &quot;SELECT * FROM users WHERE id = &apos;&quot; + id + &quot;&apos;&quot;</span>
-                  </div>
-                  <div className="bg-emerald-950/50 text-emerald-200 px-2 py-1 -mx-2 rounded border-l-2 border-emerald-400 font-semibold my-0.5 whitespace-pre">
-                    <span className="text-emerald-400 select-none mr-2 font-bold">+ 42 |</span>
-                    <span>row := db.QueryRow(&quot;SELECT * FROM users WHERE id = $1&quot;, id)</span>
-                  </div>
-                  <div className="text-neutral-500 select-none"> 43 |   return row.Scan(&amp;u.ID, &amp;u.Name)</div>
-                </div>
-              </div>
-
-              {/* Status Bar / Guarantees */}
-              <div className="flex flex-wrap items-center justify-between gap-3 text-xs pt-1 text-neutral-400 font-mono">
-                <span className="flex items-center gap-1.5 text-neutral-300 text-[11px]">
-                  <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
+              {/* Layer 2: Verification Status */}
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-1">
+                <span className="flex items-center gap-1.5 text-neutral-600">
+                  <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
                   <span>Isolated network bridge (zero internet outbound)</span>
                 </span>
-                <div className="flex items-center gap-3 text-[11px]">
-                  <span className="text-emerald-400 font-bold">✓ 0 regressions</span>
-                  <span className="text-neutral-500 hidden sm:inline">verified in 142ms</span>
-                </div>
+                <span className="font-mono text-[11px] text-neutral-400">0 regressions</span>
               </div>
             </div>
 
@@ -571,9 +543,11 @@ export default function HomePage() {
         {/* Bottom CTA Banner */}
         <div className="bg-black text-white border-2 border-black rounded-[28px] sm:rounded-[36px] p-7 sm:p-12 shadow-[8px_8px_0px_#FF6B53] flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center md:text-left">
-            <div className="inline-block px-3 py-1 bg-[#FF6B53] text-white font-mono text-[11px] font-bold rounded-full mb-1">
-              300+ IN LINE • CURRENT SPOT #{totalWaitlistCount + 1}
-            </div>
+            {nextSpot && (
+              <div className="inline-block px-3 py-1 bg-[#FF6B53] text-white font-mono text-[11px] font-bold rounded-full mb-1">
+                CURRENT SPOT #{nextSpot}
+              </div>
+            )}
             <h3 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
               Ready to secure your local repositories?
             </h3>
@@ -666,7 +640,7 @@ export default function HomePage() {
                       : "Welcome aboard! Spot secured."}
                   </div>
                   <p className="text-xs text-neutral-700 leading-relaxed font-mono">
-                    You are <strong className="text-black">#{waitlistResult.position}</strong> in the queue. 300+ engineers have joined ahead.
+                    You are <strong className="text-black">#{waitlistResult.position}</strong> in the queue.
                   </p>
                   <p className="text-[11px] text-neutral-500 pt-1">
                     Invite will be dispatched to <span className="font-bold font-mono text-black">{email}</span>.
@@ -685,7 +659,7 @@ export default function HomePage() {
                 <div className="space-y-1.5">
                   <label className="text-xs font-mono font-bold text-neutral-700 flex items-center justify-between">
                     <span>Work Email</span>
-                    <span className="text-[#FF6B53] text-[11px]">Next spot: #{totalWaitlistCount + 1}</span>
+                    {nextSpot && <span className="text-[#FF6B53] text-[11px]">Next spot: #{nextSpot}</span>}
                   </label>
                   <input
                     type="email"
@@ -722,6 +696,7 @@ export default function HomePage() {
                 </button>
 
                 <p className="text-[11px] text-center text-neutral-400 font-mono">
+                  🔒 Zero spam. 100% encrypted & private.
                 </p>
               </form>
             )}

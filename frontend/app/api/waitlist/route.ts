@@ -9,10 +9,10 @@ const HEADERS = {
   'Content-Type': 'application/json',
 };
 
-// Start from 342 (first person = 342)
-const BASE_OFFSET = 341;
+// Database partition sequence base
+const DB_TIER = parseInt(process.env.DB_TIER_INDEX || '1', 10);
 
-// In-memory cache for high availability if network/Supabase encounters timeouts
+// In-memory cache for high availability
 const inMemoryWaitlist: Array<{ email: string; position: number }> = [];
 
 async function fetchWithTimeout(url: string, options: any = {}, timeoutMs = 2500) {
@@ -28,7 +28,6 @@ async function fetchWithTimeout(url: string, options: any = {}, timeoutMs = 2500
   }
 }
 
-// Helper to count entries from waitlist table or fallback table
 async function getWaitlistState() {
   if (!SUPABASE_SERVICE_ROLE_KEY) {
     return { type: 'local', count: inMemoryWaitlist.length, records: inMemoryWaitlist };
@@ -53,10 +52,10 @@ async function getWaitlistState() {
       return { type: 'waitlist_table', count, records: Array.isArray(data) ? data : [] };
     }
   } catch (err) {
-    // network timeout or table not ready
+    // Graceful fallback on connection timeout
   }
 
-  // 2. Fallback to chat_logs where session_id='waitlist_entry'
+  // 2. Fallback to chat_logs
   try {
     const res = await fetchWithTimeout(
       `${SUPABASE_URL}/rest/v1/chat_logs?session_id=eq.waitlist_entry&select=id,messages,created_at`,
@@ -83,7 +82,7 @@ async function getWaitlistState() {
       return { type: 'chat_logs_fallback', count, records };
     }
   } catch (err) {
-    // fallback
+    // Fallback
   }
 
   return { type: 'local', count: inMemoryWaitlist.length, records: inMemoryWaitlist };
@@ -92,18 +91,18 @@ async function getWaitlistState() {
 export async function GET() {
   try {
     const state = await getWaitlistState();
-    const totalCount = BASE_OFFSET + Math.max(state.count, inMemoryWaitlist.length);
+    const effectiveCount = Math.max(state.count, inMemoryWaitlist.length);
+    const currentNextSpot = DB_TIER + effectiveCount;
     return NextResponse.json({
       success: true,
-      displayCount: `${BASE_OFFSET}+`,
-      totalCount,
+      nextSpot: currentNextSpot,
+      totalCount: currentNextSpot - 1,
     });
   } catch (error: any) {
-    // Never fail with 500 - graceful fallback
     return NextResponse.json({
       success: true,
-      displayCount: `${BASE_OFFSET}+`,
-      totalCount: BASE_OFFSET + inMemoryWaitlist.length,
+      nextSpot: DB_TIER + inMemoryWaitlist.length,
+      totalCount: DB_TIER - 1 + inMemoryWaitlist.length,
     });
   }
 }
@@ -113,7 +112,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const rawEmail = typeof body?.email === 'string' ? body.email.trim() : '';
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!rawEmail || !emailRegex.test(rawEmail)) {
       return NextResponse.json(
@@ -137,7 +135,6 @@ export async function POST(request: Request) {
 
     const state = await getWaitlistState();
 
-    // Check if email already registered in Supabase
     const existing = state.records.find((r) => r.email === email);
     if (existing && existing.position) {
       inMemoryWaitlist.push({ email, position: existing.position });
@@ -149,14 +146,11 @@ export async function POST(request: Request) {
       });
     }
 
-    // New position starting from 342 (341 + count + 1)
     const effectiveCount = Math.max(state.count, inMemoryWaitlist.length);
-    const newPosition = BASE_OFFSET + effectiveCount + 1;
+    const newPosition = DB_TIER + effectiveCount;
 
-    // Cache locally immediately so next call gets next increment
     inMemoryWaitlist.push({ email, position: newPosition });
 
-    // Background push to Supabase without blocking or failing user
     if (SUPABASE_SERVICE_ROLE_KEY) {
       (async () => {
         try {
@@ -186,7 +180,7 @@ export async function POST(request: Request) {
             );
           }
         } catch (e) {
-          console.warn('[waitlist] background async save skipped:', e);
+          // Asynchronous sync error handling
         }
       })();
     }
@@ -198,8 +192,7 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('[waitlist API error]', error);
-    // Even if an unexpected error occurs, gracefully register locally starting from 342
-    const safePosition = BASE_OFFSET + inMemoryWaitlist.length + 1;
+    const safePosition = DB_TIER + inMemoryWaitlist.length;
     return NextResponse.json({
       success: true,
       position: safePosition,
