@@ -1,28 +1,53 @@
 ---
-name: Bug report
-about: Create a report to help us improve Zerra
-title: '[BUG] '
-labels: 'bug'
-assignees: ''
+name: "🐛 Bug Report"
+about: "Report a reproducible bug in Zerra"
+title: "bug: "
+labels: ["bug", "needs-triage"]
+assignees: ""
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+## Bug Description
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Register repo '...'
-2. Trigger scan with mode '...'
-3. See error
+<!-- A clear and concise description of what the bug is. -->
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+## Steps to Reproduce
 
-**Screenshots / Terminal Output**
-If applicable, add screenshots or CLI logs to help explain your problem.
+1. <!-- First step -->
+2. <!-- Second step -->
+3. <!-- See error -->
 
-**Environment:**
- - OS: [e.g. Ubuntu 22.04, macOS Sonoma, Windows 11]
- - Python Version: [e.g. 3.11.4]
- - Node Version: [e.g. 20.10.0]
- - Zerra Version: [e.g. 2.0.0]
+## Expected Behavior
+
+<!-- What did you expect to happen? -->
+
+## Actual Behavior
+
+<!-- What actually happened? Include error messages, stack traces, or screenshots. -->
+
+## Terminal Output / Logs
+
+```
+<!-- Paste relevant logs here. Run with DEBUG=* for verbose output. -->
+```
+
+## Environment
+
+| Field | Value |
+|---|---|
+| OS | <!-- e.g. Ubuntu 22.04, macOS 14 Sonoma, Windows 11 --> |
+| Docker version | <!-- e.g. 27.0.3 --> |
+| Node.js version | <!-- e.g. 20.14.0 --> |
+| Python version | <!-- e.g. 3.11.9 --> |
+| Go version | <!-- e.g. 1.22.4 --> |
+| Zerra version / commit | <!-- e.g. main@a1b2c3d --> |
+
+## Additional Context
+
+<!-- Any other context about the problem here. -->
+
+---
+
+> **Checklist before submitting:**
+> - [ ] I searched [existing issues](https://github.com/sjsreehari/zerra/issues) and this is not a duplicate
+> - [ ] I included reproduction steps
+> - [ ] I included environment details

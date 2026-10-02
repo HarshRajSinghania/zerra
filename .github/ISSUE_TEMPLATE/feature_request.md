@@ -1,19 +1,39 @@
 ---
-name: Feature request
-about: Suggest an idea for Zerra
-title: '[FEAT] '
-labels: 'enhancement'
-assignees: ''
+name: "✨ Feature Request"
+about: "Propose a new feature or improvement for Zerra"
+title: "feat: "
+labels: ["enhancement", "needs-triage"]
+assignees: ""
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+## Problem Statement
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+<!-- What problem does this feature solve? Who is affected and how? -->
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+## Proposed Solution
 
-**Additional context**
-Add any other context, SAST rule references, or mockups about the feature request here.
+<!-- Describe the solution you'd like. Be as specific as possible. -->
+
+## Alternatives Considered
+
+<!-- What alternative approaches did you consider? Why do you prefer your proposed solution? -->
+
+## Acceptance Criteria
+
+<!-- What does "done" look like for this feature? List checkboxes. -->
+
+- [ ] <!-- Criterion 1 -->
+- [ ] <!-- Criterion 2 -->
+- [ ] <!-- Tests added / updated -->
+- [ ] <!-- Docs updated if applicable -->
+
+## Additional Context
+
+<!-- Any mockups, links to prior art, related issues, or other context. -->
+
+---
+
+> **Checklist before submitting:**
+> - [ ] I searched [existing issues](https://github.com/sjsreehari/zerra/issues) and the [roadmap](https://github.com/sjsreehari/zerra#roadmap) — this is not already planned
+> - [ ] I described the problem, not just the solution
+> - [ ] I listed acceptance criteria
