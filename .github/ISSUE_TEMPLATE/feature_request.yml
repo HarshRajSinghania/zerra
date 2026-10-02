@@ -1,0 +1,77 @@
+name: Feature Request
+description: Propose a new feature or improvement.
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Before submitting, check the [Roadmap](https://github.com/sjsreehari/zerra#roadmap) and
+        [existing issues](https://github.com/sjsreehari/zerra/issues?q=is%3Aissue+sort%3Acreated-desc)
+        to avoid duplicates.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of Zerra would this feature affect?
+      options:
+        - Webhook ingestion (NestJS)
+        - Scanner worker (Go / Semgrep / Syft / OSV)
+        - Secret scanner
+        - Fix engine
+        - AI agent (Python / LangGraph)
+        - CLI (zerra init)
+        - Dashboard (Next.js)
+        - Docker / Compose stack
+        - CI / GitHub Actions
+        - New component / other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: |
+        What problem does this feature solve? Describe the specific situation or limitation.
+        Focus on the problem, not the solution — explain who is affected and how.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: |
+        Describe the solution you would like. Be as specific as possible.
+        If you have a preferred API design, config format, or UI flow, describe it here.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other approaches did you consider, and why do you prefer your proposed solution?
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What does "done" look like? List concrete, testable conditions.
+      placeholder: |
+        - ...
+        - Tests added or updated
+        - Docs updated if the API or config changes
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked the roadmap and existing issues — this is not already tracked.
+          required: true
+        - label: I described the problem, not just the solution.
+          required: true

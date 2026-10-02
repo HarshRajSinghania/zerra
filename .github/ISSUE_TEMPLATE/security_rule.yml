@@ -1,0 +1,81 @@
+name: Security Rule Request
+description: Propose a new Semgrep SAST rule or improve an existing detection.
+title: "[Rule]: "
+labels: ["security-rule", "enhancement"]
+
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Use this form to propose a new Semgrep SAST rule, secret-scan pattern, or SCA check.
+        For actual security vulnerabilities in Zerra itself, see [SECURITY.md](../SECURITY.md).
+
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language / ecosystem
+      options:
+        - Go
+        - TypeScript / JavaScript
+        - Python
+        - Dockerfile
+        - Terraform / IaC
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - critical
+        - high
+        - medium
+        - low
+    validations:
+      required: true
+
+  - type: input
+    id: cwe
+    attributes:
+      label: CWE
+      placeholder: "e.g. CWE-89 (SQL Injection)"
+    validations:
+      required: true
+
+  - type: input
+    id: owasp
+    attributes:
+      label: OWASP category
+      placeholder: "e.g. A03:2021 – Injection"
+
+  - type: textarea
+    id: vulnerable
+    attributes:
+      label: Vulnerable pattern (should match)
+      description: A minimal code snippet that this rule should flag as vulnerable.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: safe
+    attributes:
+      label: Safe pattern (should NOT match)
+      description: A minimal code snippet that is safe and must not be flagged.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: fix
+    attributes:
+      label: Proposed fix / remediation hint
+      description: What should Zerra suggest when this rule fires?
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: CVEs, OWASP links, blog posts, or existing Semgrep rules.

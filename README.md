@@ -299,7 +299,7 @@ First-time contributors: look for issues labeled [`good first issue`](https://gi
 
 Zerra is an AppSec tool — we take our own security seriously. For responsible disclosure guidelines, see [SECURITY.md](SECURITY.md).
 
-**Do not open a public GitHub issue for security vulnerabilities.** Email `security@zerra.dev` instead. We respond within 48 hours.
+**Do not open a public GitHub issue for security vulnerabilities.** Email `isrosreehari@gmail.com` instead. We respond within 48 hours.
 
 ---
 

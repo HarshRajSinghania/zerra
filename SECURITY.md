@@ -10,8 +10,8 @@ Instead, please use one of the following channels:
 
 | Channel | Details |
 |---|---|
-| 📧 **Email** | `security@zerra.dev` |
-| 🔒 **GitHub Security Advisory** | [Report a vulnerability](https://github.com/sjsreehari/zerra/security/advisories/new) |
+| Email | `isrosreehari@gmail.com` |
+| GitHub Security Advisory | [Report a vulnerability](https://github.com/sjsreehari/zerra/security/advisories/new) |
 
 We will respond to all valid reports within **48 hours** and aim to have a patch or mitigation available within **7 days** for critical issues.
 
@@ -33,9 +33,9 @@ A high-quality report helps us triage and fix faster. Please include:
 
 | Version | Supported |
 |---|:---:|
-| `main` branch (latest) | ✅ |
-| Tagged releases | ✅ |
-| Older versions | ❌ — please upgrade |
+| `main` branch (latest) | Yes |
+| Tagged releases | Yes |
+| Older versions | No — please upgrade |
 
 ---
 

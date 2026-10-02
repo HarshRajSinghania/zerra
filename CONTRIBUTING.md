@@ -21,7 +21,7 @@ Thank you for considering contributing to **Zerra** — an open-source AppSec pl
 ## Code of Conduct
 
 All contributors and maintainers are expected to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).  
-Report unacceptable behavior to `security@zerra.dev`.
+Report unacceptable behavior to `isrosreehari@gmail.com`.
 
 ---
 
@@ -209,7 +209,7 @@ All four suites run automatically in CI on every push and pull request.
 If you discover a security vulnerability in Zerra itself, **do not open a public GitHub issue**.
 
 Options:
-- **Email:** `security@zerra.dev` — we respond within 48 hours.
+- **Email:** `isrosreehari@gmail.com` — we respond within 48 hours.
 - **GitHub private reporting:** use the [Security Advisory](https://github.com/sjsreehari/zerra/security/advisories/new) flow.
 
 See [SECURITY.md](SECURITY.md) for the full responsible disclosure policy.

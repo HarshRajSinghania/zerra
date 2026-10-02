@@ -1,48 +1,42 @@
-## Summary
+## Overview
 
-<!-- One paragraph describing what this PR does and why. -->
+<!-- Summarize the change in 1-2 lines. Link the related issue. -->
 
-## Related Issue
+Closes #
 
-Closes #<!-- issue number -->
+## What changed and why
 
-## Type of Change
+<!-- Explain the root cause, motivation, or design decision behind this change.
+     Keep it concise. Link or collapse lengthy supporting material. -->
 
-- [ ]  Bug fix (non-breaking)
-- [ ]  New feature (non-breaking)
-- [ ]  Breaking change (fix or feature that causes existing functionality to change)
-- [ ]  Security rule (new or improved Semgrep / secret-scan rule)
-- [ ]  Documentation update
-- [ ]  Refactor / internal improvement
-- [ ]  Performance improvement
-- [ ]  CI / infra change
+## Validation
 
-## Changes Made
+<!-- Show that the change works as intended.
+     Include commands to reproduce the validation steps. -->
 
-<!-- List the key changes. Bullet points are fine. -->
-
-- 
-
-## Testing
-
-<!-- How was this tested? Include commands to reproduce. -->
-
-```bash
+```sh
 # e.g.
 npm test
 cd agent && pytest tests/ -v
 cd backend && go test ./...
 ```
 
-## Screenshots / Output (if applicable)
+## Notes for reviewers
 
-<!-- Before/after screenshots or terminal output for UI/CLI changes. -->
+<!-- Anything that needs special attention during review: tricky logic, known limitations,
+     follow-up issues, or things that are intentionally out of scope. -->
 
-## Checklist
+---
 
-- [ ] My code follows the project's [Conventional Commits](CONTRIBUTING.md#branch--commit-guidelines) format
-- [ ] I have added / updated tests for the changes I made
-- [ ] All CI checks pass locally (`npm test`, `pytest`, `go test`)
-- [ ] I have updated documentation if needed (README, CONTRIBUTING, inline docs)
-- [ ] Breaking changes are documented in this PR description
-- [ ] I have linked the related issue above
+<details>
+<summary>Pull Request Checklist</summary>
+
+- [ ] My PR title follows [Conventional Commits](../CONTRIBUTING.md#branch--commit-guidelines) format (e.g. `fix(scanner): ...`, `feat(webhook): ...`).
+- [ ] I linked the related issue above (`Closes #...`).
+- [ ] I added or updated tests for the logic I changed.
+- [ ] All CI checks pass locally (`npm test`, `pytest`, `go test ./...`, `npm run build` in `frontend/`).
+- [ ] I updated documentation (README, CONTRIBUTING, inline comments) if the public API, CLI, or config format changed.
+- [ ] Breaking changes are described in the "What changed and why" section.
+- [ ] I did not include secrets, tokens, or personal credentials in code, comments, or test fixtures.
+
+</details>
