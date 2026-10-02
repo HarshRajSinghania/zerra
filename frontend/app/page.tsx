@@ -3,629 +3,406 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
-  Shield,
-  ShieldAlert,
-  ShieldCheck,
-  Zap,
-  Play,
-  Terminal,
   ArrowRight,
-  CheckCircle2,
-  Lock,
-  GitBranch,
-  Search,
-  Bug,
-  Bell,
-  MessageCircle,
-  Mail,
-  Users,
-  Code2,
-  Cpu,
-  Layers,
-  Sparkles,
-  Menu,
-  X,
+  ArrowUpRight,
   Check,
-  Flame,
-  Award,
-  ExternalLink,
+  Copy,
+  GitBranch,
+  GitCommit,
+  GitPullRequest,
+  Lock,
+  MessageCircle,
+  Minus,
+  Plus,
+  Shield,
+  ShieldCheck,
+  Terminal,
+  Zap,
 } from "lucide-react";
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<"sast" | "secrets" | "sca" | "iac" | "db">("sast");
-  const [prSimulated, setPrSimulated] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Accordion state for right column cards (top open by default like the reference)
+  const [openCard, setOpenCard] = useState<"auto-pr" | "manual-fix" | "integrations" | "sandboxes">("auto-pr");
+  const [fixedState, setFixedState] = useState(false);
+  const [prCreated, setPrCreated] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const demoData = {
-    sast: {
-      category: "SAST • SQL Injection (CWE-89)",
-      file: "internal/db/users.go:42",
-      vulnSnippet: `// Vulnerable: Unsanitized SQL string concatenation\nquery := "SELECT * FROM users WHERE id = '" + userID + "'"\nrow := db.QueryRow(query)`,
-      fixSnippet: `// Remediation: Parameterized query placeholder ($1)\nrow := db.QueryRow("SELECT * FROM users WHERE id = $1", userID)`,
-      explanation: "Zerra detected unparameterized user input in SQL statement. Verified patch replaces concatenation with safe positional argument and passes sandbox regression tests.",
-      branch: "zerra/fix-cwe-89-users-go",
-      severity: "CRITICAL",
-      cvss: 9.8,
-      sandbox: "Verified in Docker sandbox (go test ./... PASS)",
-    },
-    secrets: {
-      category: "Secrets • Plaintext Stripe API Key (CWE-798)",
-      file: "config/payments.py:14",
-      vulnSnippet: `# Compromised: Hardcoded live Stripe secret key\nSTRIPE_SECRET_KEY = "sk_test_51NABC1234567890abcdefghijklmnopqrstuvwxyz"`,
-      fixSnippet: `# Remediation: Load from secure environment variable\nimport os\nSTRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")`,
-      explanation: "Live production credential exposed in source tree. Auto-PR migrates key to environment variable, updates .gitignore, and rotates secret.",
-      branch: "zerra/fix-cwe-798-stripe-key",
-      severity: "CRITICAL",
-      cvss: 9.9,
-      sandbox: "Verified in Docker sandbox (git apply --check PASS)",
-    },
-    sca: {
-      category: "SCA • Vulnerable Dependency urllib3 (CVE-2023-45803)",
-      file: "requirements.txt:18",
-      vulnSnippet: `# Vulnerable: urllib3 < 2.0.7 leaks auth headers on redirect\nurllib3==1.26.15`,
-      fixSnippet: `# Remediation: Upgrade to nearest safe patched release\nurllib3>=2.0.7`,
-      explanation: "Known supply-chain CVE with public exploit. Auto-PR bumps package constraint and proves zero breaking changes by executing project test suite in sandbox.",
-      branch: "zerra/fix-cve-2023-45803-urllib3",
-      severity: "HIGH",
-      cvss: 7.5,
-      sandbox: "Verified in Docker sandbox (pytest -v PASS)",
-    },
-    iac: {
-      category: "IaC & CI/CD • GitHub Actions Write-All Permissions (CWE-732)",
-      file: ".github/workflows/deploy.yml:12",
-      vulnSnippet: `# Insecure: Excessive workflow permissions grant write-all token\npermissions: write-all`,
-      fixSnippet: `# Remediation: Apply principle of least privilege\npermissions:\n  contents: read\n  pull-requests: write\n  issues: write`,
-      explanation: "Over-privileged CI/CD execution context flagged. Auto-PR scopes token permissions strictly to required pull-request and issue creation capabilities.",
-      branch: "zerra/fix-actions-least-privilege",
-      severity: "HIGH",
-      cvss: 8.2,
-      sandbox: "Verified in Docker sandbox (actionlint PASS)",
-    },
-    db: {
-      category: "Database Audit • Missing Row-Level Security (CWE-284)",
-      file: "db/migrations/20260901_orders.sql:28",
-      vulnSnippet: `-- Missing tenant isolation policy on sensitive table\nCREATE TABLE customer_orders (\n  id UUID PRIMARY KEY,\n  tenant_id UUID NOT NULL,\n  amount DECIMAL\n);`,
-      fixSnippet: `-- Hardening: Enable Row-Level Security (RLS) & tenant isolation\nALTER TABLE customer_orders ENABLE ROW LEVEL SECURITY;\nCREATE POLICY tenant_isolation ON customer_orders\n  USING (tenant_id = current_setting('app.current_tenant')::UUID);`,
-      explanation: "Unenforced multi-tenant data boundary. Auto-PR enables PostgreSQL Row-Level Security and executes synthetic tenant isolation tests in throwaway DB sandbox.",
-      branch: "zerra/fix-db-rls-tenant-isolation",
-      severity: "CRITICAL",
-      cvss: 9.1,
-      sandbox: "Verified in Throwaway DB sandbox (pgTAP isolation PASS)",
-    },
+  const copyInstallCmd = () => {
+    navigator.clipboard.writeText("npx zerra init");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  const currentDemo = demoData[activeTab];
-
   return (
-    <div className="min-h-screen bg-[#09090b] text-[#f4f4f5] selection:bg-blue-500/30 selection:text-blue-200">
-      {/* Ambient Radial Background Glows */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-tr from-blue-600/15 via-indigo-500/10 to-purple-600/15 blur-[140px] rounded-full" />
-        <div className="absolute top-[45%] left-1/4 w-[600px] h-[400px] bg-emerald-500/5 blur-[160px] rounded-full" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:36px_36px]" />
-      </div>
-
+    <div className="min-h-screen bg-[#F8F8FA] text-[#111827] font-sans antialiased selection:bg-[#FF6B53] selection:text-white">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-50 w-full border-b border-white/[0.08] bg-[#09090b]/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
-                Z
-              </div>
-              <span className="font-extrabold text-xl tracking-tight text-white">
-                Zerra
-              </span>
-            </Link>
-
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-medium text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Autonomous Security v2.0
-            </span>
+      <header className="max-w-7xl mx-auto px-6 sm:px-10 pt-8 pb-6 flex items-center justify-between">
+        {/* Brand Logo */}
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="w-6 h-6 rounded-full bg-black flex items-center justify-center text-white text-xs font-black shadow-[2px_2px_0px_#FF6B53]">
+            ●
           </div>
+          <span className="font-extrabold text-2xl tracking-tight text-black">
+            zerra
+          </span>
+        </Link>
 
-          <nav className="hidden md:flex items-center gap-8 text-xs font-medium text-zinc-400">
-            <a href="#features" className="hover:text-white transition-colors">
-              Features
-            </a>
-            <a href="#demo" className="hover:text-white transition-colors">
-              Auto-PR Engine
-            </a>
-            <a href="#notifications" className="hover:text-white transition-colors">
-              Alert Channels
-            </a>
-            <a href="#compliance" className="hover:text-white transition-colors">
-              SARIF & Compliance
-            </a>
-          </nav>
+        {/* Center Nav Links */}
+        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-neutral-600">
+          <a href="#how-it-works" className="hover:text-black transition-colors">
+            How it works
+          </a>
+          <a href="#features" className="hover:text-black transition-colors">
+            Local engine
+          </a>
+          <a href="#integrations" className="hover:text-black transition-colors">
+            Integrations
+          </a>
+          <a href="https://github.com/sjsreehari/zerra" target="_blank" rel="noreferrer" className="hover:text-black transition-colors">
+            Docs & Architecture
+          </a>
+        </nav>
 
-          <div className="flex items-center gap-3">
-            <a
-              href="https://github.com/sjsreehari/zerra"
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs font-medium text-zinc-300 hover:text-white px-3 py-2 transition-colors hidden sm:flex items-center gap-1.5"
-            >
-              <GitBranch size={14} />
-              <span>GitHub</span>
-            </a>
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-md shadow-blue-500/20 transition-all active:scale-[0.98]"
-            >
-              <span>Open Console</span>
-              <ArrowRight size={13} />
-            </Link>
-
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5"
-            >
-              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
-            </button>
-          </div>
-        </div>
-
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-white/[0.08] bg-[#09090b]/95 px-6 py-4 space-y-3">
-            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-zinc-300">Features</a>
-            <a href="#demo" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-zinc-300">Auto-PR Engine</a>
-            <a href="#notifications" onClick={() => setMobileMenuOpen(false)} className="block text-sm text-zinc-300">Alert Channels</a>
-            <Link href="/dashboard" className="block text-sm text-blue-400 font-semibold">Open Console →</Link>
-          </div>
-        )}
-      </header>
-
-      {/* Hero Section */}
-      <main className="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-28 text-center space-y-8">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.1] text-xs font-medium text-blue-300 shadow-sm backdrop-blur-md">
-          <Sparkles size={13} className="text-amber-400" />
-          <span>Local-First · Self-Hosted Blue-Team Security</span>
-          <span className="text-zinc-500">|</span>
-          <span className="text-emerald-400">Isolated Docker Sandbox Proofs</span>
-        </div>
-
-        <div className="space-y-4 max-w-4xl mx-auto">
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.1]">
-            A Local-First,{" "}
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-400">
-              Blue-Team Security Platform.
-            </span>
-          </h1>
-          <p className="text-base sm:text-lg text-zinc-300 max-w-3xl mx-auto leading-relaxed">
-            Your personal security engineer, running strictly on your own workstation. Zerra provisions isolated Docker sandboxes, tests code across SAST, dependency supply chains, and databases, verifies every fix against your real test suite, and opens GitHub Pull Requests directly from your device.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs text-zinc-400">
-            <span className="flex items-center gap-1"><CheckCircle2 size={13} className="text-emerald-400" /> 100% Local-first (No SaaS Code Uploads)</span>
-            <span>•</span>
-            <span className="flex items-center gap-1"><CheckCircle2 size={13} className="text-emerald-400" /> Blue-Team Defense Only</span>
-            <span>•</span>
-            <span className="flex items-center gap-1"><CheckCircle2 size={13} className="text-emerald-400" /> Human-in-the-Loop PRs</span>
-          </div>
-        </div>
-
-        {/* Hero CTAs */}
-        <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-          <Link
-            href="/dashboard/repositories"
-            className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
-          >
-            <GitBranch size={16} className="text-white" />
-            <span>Connect Local Project</span>
-            <ArrowRight size={15} />
-          </Link>
-
+        {/* Right CTA Links */}
+        <div className="flex items-center gap-4">
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white/[0.05] border border-white/[0.12] hover:bg-white/[0.08] hover:border-white/[0.2] text-white font-semibold text-sm transition-all"
+            className="text-sm font-semibold text-neutral-700 hover:text-black px-2 py-1 transition-colors hidden sm:inline-block"
           >
-            <ShieldCheck size={16} className="text-emerald-400" />
-            <span>Open Security Console</span>
+            Local Console
           </Link>
+          <a
+            href="https://github.com/sjsreehari/zerra"
+            target="_blank"
+            rel="noreferrer"
+            className="px-5 py-2.5 text-xs font-bold text-black border-2 border-black rounded-xl bg-white shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+          >
+            Star on GitHub
+          </a>
+        </div>
+      </header>
+
+      {/* Main Container */}
+      <main className="max-w-7xl mx-auto px-6 sm:px-10 pt-8 pb-24 space-y-12">
+        {/* Hero Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+          {/* Giant Title */}
+          <div className="lg:col-span-8">
+            <h1 className="text-5xl sm:text-7xl lg:text-[84px] font-black text-black tracking-[-0.03em] leading-[1.02]">
+              Security that <br />
+              checks every commit
+            </h1>
+          </div>
+
+          {/* Subtitle & Quick CTAs */}
+          <div className="lg:col-span-4 space-y-5 pb-2">
+            <p className="text-base sm:text-lg text-neutral-700 leading-relaxed font-normal">
+              Your autonomous blue-team security engineer running strictly on your local machine. It tests every commit in isolated Docker sandboxes, fixes vulnerabilities with a 1-click button, and opens verified Pull Requests on push.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <Link
+                href="/dashboard"
+                className="px-6 py-3.5 bg-black hover:bg-neutral-800 text-white font-bold text-sm rounded-xl shadow-[4px_4px_0px_#FF6B53] hover:shadow-[2px_2px_0px_#FF6B53] hover:translate-x-[2px] hover:translate-y-[2px] transition-all inline-flex items-center gap-2"
+              >
+                <span>Open Local Dashboard</span>
+              </Link>
+
+              <button
+                onClick={copyInstallCmd}
+                className="px-4 py-3.5 bg-white border-2 border-black text-black font-mono text-xs font-semibold rounded-xl shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all inline-flex items-center gap-2"
+              >
+                {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                <span>npx zerra init</span>
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Multi-Channel Alerts Marquee */}
-        <div className="pt-8 border-t border-white/[0.06] flex flex-wrap items-center justify-center gap-4 text-xs font-mono text-zinc-400">
-          <span className="text-zinc-500">Integrated Delivery & Alert Channels:</span>
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400">
-            <GitBranch size={13} /> GitHub Pull Requests
-          </span>
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-            <MessageCircle size={13} /> WhatsApp Cloud API
-          </span>
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-            <Zap size={13} /> Discord Webhook
-          </span>
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-            <Users size={13} /> Microsoft Teams
-          </span>
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
-            <Mail size={13} /> SMTP Email
-          </span>
-        </div>
-
-        {/* Interactive Dual-Panel Auto-PR Engine Showcase */}
-        <div id="demo" className="pt-12 text-left">
-          <div className="rounded-2xl border border-white/[0.12] bg-[#121215]/90 p-5 sm:p-7 shadow-2xl backdrop-blur-2xl overflow-hidden relative">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-white/[0.08] gap-3">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block" />
-                <span className="w-3 h-3 rounded-full bg-yellow-500/80 inline-block" />
-                <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
-                <span className="text-xs font-mono text-zinc-400 ml-2">
-                  zerra-verification-gate // sandbox-isolated
+        {/* Feature Cards Grid (Matching the Reference UI Layout) */}
+        <div id="features" className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pt-4">
+          {/* Left Column: Big Feature Card (Like "Latest updates" card in reference image) */}
+          <div className="lg:col-span-7 bg-white border-2 border-black rounded-[32px] p-7 sm:p-9 shadow-[6px_6px_0px_#111] space-y-6 flex flex-col justify-between min-h-[520px]">
+            {/* Header with Title and Version */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b-2 border-neutral-100 pb-3">
+                <span className="text-sm font-bold uppercase tracking-wider text-black">
+                  Local Commit Engine
+                </span>
+                <span className="text-xs font-mono font-bold text-neutral-400">
+                  v. 2.4.0 • Sandbox Active
                 </span>
               </div>
 
-              {/* Selector Tabs */}
-              <div className="flex flex-wrap items-center gap-1 bg-white/[0.04] p-1 rounded-xl border border-white/[0.08]">
-                {[
-                  { key: "sast", label: "1. SAST (SQLi)" },
-                  { key: "secrets", label: "2. Secrets Leak" },
-                  { key: "sca", label: "3. Supply Chain" },
-                  { key: "iac", label: "4. IaC & CI/CD" },
-                  { key: "db", label: "5. DB Security" },
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => {
-                      setActiveTab(tab.key as any);
-                      setPrSimulated(false);
-                    }}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                      activeTab === tab.key
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+              <div className="space-y-2 pt-2">
+                <h3 className="text-2xl sm:text-3xl font-bold text-black tracking-tight">
+                  Checks code locally on every single commit
+                </h3>
+                <p className="text-sm text-neutral-600 leading-relaxed max-w-xl">
+                  Every commit triggers disposable Docker containers on your machine. Zerra seeds throwaway databases with synthetic data, runs Semgrep SAST, scans dependencies, and verifies fixes with <code className="bg-neutral-100 px-1.5 py-0.5 rounded font-mono text-xs text-black border border-neutral-200">git apply --check</code> before anything touches production.
+                </p>
               </div>
             </div>
 
-            {/* Split Screen: Vulnerability vs Auto-PR */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-              {/* Left Column: Finding Details */}
-              <div className="space-y-3 font-mono text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Flame size={14} /> 1. Real-time Detection
-                  </span>
-                  <span className="text-[10px] text-red-400 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20 font-bold">
-                    CVSS {currentDemo.cvss} • {currentDemo.severity}
-                  </span>
-                </div>
+            {/* Visual Isometric Stack / Sandbox Simulator */}
+            <div className="relative my-4 p-5 bg-[#F8F8FA] border-2 border-black rounded-2xl shadow-[4px_4px_0px_#111] overflow-hidden space-y-3">
+              <div className="flex items-center justify-between text-xs font-mono text-neutral-500 border-b border-neutral-200 pb-2">
+                <span className="flex items-center gap-1.5 text-black font-bold">
+                  <GitCommit size={14} className="text-[#FF6B53]" />
+                  commit 8f2b41c (feat: checkout endpoint)
+                </span>
+                <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-semibold border border-emerald-300">
+                  ● Sandbox: All Tests Passed
+                </span>
+              </div>
 
-                <div className="rounded-xl border border-white/[0.08] bg-black/60 p-4 space-y-2.5">
-                  <div className="text-zinc-400 text-[11px] flex items-center justify-between">
-                    <span>{currentDemo.category}</span>
-                    <code className="text-blue-400">{currentDemo.file}</code>
-                  </div>
-                  <pre className="text-red-300 bg-white/[0.02] p-3 rounded-lg border border-red-500/20 overflow-x-auto whitespace-pre-wrap">
-                    {currentDemo.vulnSnippet}
-                  </pre>
-                  <p className="text-[11px] text-zinc-400 border-t border-white/[0.05] pt-2">
-                    {currentDemo.explanation}
+              {/* Layer 1: SAST Finding */}
+              <div className="p-3 bg-white border border-neutral-300 rounded-xl space-y-1.5 text-xs font-mono">
+                <div className="flex items-center justify-between">
+                  <span className="text-red-600 font-bold">SAST • SQL Injection (CWE-89)</span>
+                  <span className="text-neutral-400">internal/db/users.go:42</span>
+                </div>
+                <div className="text-neutral-700 bg-red-50/60 p-2 rounded border border-red-200 text-[11px] overflow-x-auto">
+                  <span className="text-red-500 line-through">- query := &quot;SELECT * FROM users WHERE id = &apos;&quot; + id + &quot;&apos;&quot;</span>
+                  <br />
+                  <span className="text-emerald-600 font-bold">+ row := db.QueryRow(&quot;SELECT * FROM users WHERE id = $1&quot;, id)</span>
+                </div>
+              </div>
+
+              {/* Layer 2: Verification Status */}
+              <div className="flex items-center justify-between text-xs pt-1">
+                <span className="flex items-center gap-1.5 text-neutral-600">
+                  <ShieldCheck size={14} className="text-emerald-600" />
+                  Isolated network bridge (zero internet outbound)
+                </span>
+                <span className="font-mono text-[11px] text-neutral-400">0 regressions</span>
+              </div>
+            </div>
+
+            {/* Read full documentation footer link */}
+            <div className="pt-2">
+              <a
+                href="https://github.com/sjsreehari/zerra"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 text-xs font-bold text-black group hover:text-[#FF6B53] transition-colors"
+              >
+                <span className="w-7 h-7 rounded-full border-2 border-black flex items-center justify-center group-hover:bg-[#FF6B53] group-hover:text-white transition-all">
+                  <ArrowUpRight size={14} />
+                </span>
+                <span>Read complete system architecture</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Right Column: Stacked Cards (Matching the Red Card + White Accordion in reference) */}
+          <div className="lg:col-span-5 space-y-5">
+            {/* Card 1: Vibrant Coral Accent Card (Like "Send money" card in reference image) */}
+            <div
+              className="bg-[#FF6B53] text-white border-2 border-black rounded-[32px] p-7 shadow-[6px_6px_0px_#111] transition-all cursor-pointer"
+              onClick={() => setOpenCard(openCard === "auto-pr" ? ("" as any) : "auto-pr")}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-bold tracking-tight text-white">
+                  Auto-PR on Push to Prod
+                </h3>
+                <button
+                  type="button"
+                  aria-label="Toggle Auto-PR details"
+                  className="w-10 h-10 rounded-full border-2 border-black bg-white text-black flex items-center justify-center shadow-[2px_2px_0px_#111] hover:scale-105 transition-transform shrink-0"
+                >
+                  {openCard === "auto-pr" ? <Minus size={18} /> : <Plus size={18} />}
+                </button>
+              </div>
+
+              {openCard === "auto-pr" && (
+                <div className="pt-4 space-y-4 text-white/95 text-sm leading-relaxed">
+                  <p>
+                    When code is pushed toward main or production branches, Zerra autonomously verifies all proposed fixes inside isolated Docker sandboxes and creates a formatted GitHub Pull Request for human review.
                   </p>
-                </div>
-              </div>
 
-              {/* Right Column: Automated Fix PR */}
-              <div className="space-y-3 font-mono text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <GitBranch size={14} /> 2. Automated Remediation PR
-                  </span>
-                  <button
-                    onClick={() => setPrSimulated(!prSimulated)}
-                    className={`text-[11px] px-3 py-1 rounded-lg font-bold border transition-all ${
-                      prSimulated
-                        ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                        : "bg-emerald-600 hover:bg-emerald-500 text-white"
-                    }`}
-                  >
-                    {prSimulated ? "✓ PR Opened on GitHub" : "Click to Create PR 🚀"}
-                  </button>
-                </div>
+                  <div className="p-3 bg-black/20 border border-black/20 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span>Branch: <code className="text-yellow-200">zerra/fix-cwe-89</code></span>
+                      <span className="font-bold text-white bg-black/40 px-2 py-0.5 rounded">Target: main</span>
+                    </div>
 
-                <div className="rounded-xl border border-white/[0.08] bg-black/60 p-4 space-y-2.5">
-                  <div className="text-zinc-400 text-[11px] flex items-center justify-between">
-                    <span>Branch: <code className="text-emerald-400">{currentDemo.branch}</code></span>
-                    <span className="text-emerald-400 font-bold">Base: main</span>
-                  </div>
-                  <pre className="text-emerald-300 bg-white/[0.02] p-3 rounded-lg border border-emerald-500/20 overflow-x-auto whitespace-pre-wrap">
-                    {currentDemo.fixSnippet}
-                  </pre>
-                  <div className="text-[11px] text-zinc-400 border-t border-white/[0.05] pt-2 flex items-center justify-between">
-                    <span>
-                      Alert Status:{" "}
-                      <strong className="text-emerald-400">
-                        {prSimulated ? "Dispatched to WhatsApp & Discord" : "Ready to Dispatch"}
-                      </strong>
-                    </span>
-                    <span className="text-blue-400">Auto-Remediated in 1.4s</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPrCreated(!prCreated);
+                      }}
+                      className="w-full py-2 bg-white text-black font-bold text-xs rounded-lg border-2 border-black shadow-[2px_2px_0px_#111] hover:bg-neutral-100 transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <GitPullRequest size={14} />
+                      <span>{prCreated ? "✓ Pull Request Opened on GitHub!" : "Simulate Auto-PR Dispatch"}</span>
+                    </button>
                   </div>
                 </div>
+              )}
+            </div>
+
+            {/* Card 2: 1-Click Manual Fix Button (Like "Recieve money" in reference image) */}
+            <div
+              className="bg-white border-2 border-black rounded-[32px] p-6 shadow-[6px_6px_0px_#111] transition-all cursor-pointer"
+              onClick={() => setOpenCard(openCard === "manual-fix" ? ("" as any) : "manual-fix")}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold tracking-tight text-black">
+                  1-Click Manual Fix Button
+                </h3>
+                <button
+                  type="button"
+                  aria-label="Toggle Manual Fix details"
+                  className="w-10 h-10 rounded-full border-2 border-black bg-white text-black flex items-center justify-center shadow-[2px_2px_0px_#111] hover:scale-105 transition-transform shrink-0"
+                >
+                  {openCard === "manual-fix" ? <Minus size={18} /> : <Plus size={18} />}
+                </button>
               </div>
+
+              {openCard === "manual-fix" && (
+                <div className="pt-4 space-y-3 text-neutral-600 text-xs leading-relaxed border-t border-neutral-100 mt-3">
+                  <p>
+                    Prefer manual control? Browse findings in your local dashboard and click the <strong className="text-black">Apply Fix</strong> button. Zerra writes the unified patch directly to your working tree and commits it to a clean branch.
+                  </p>
+
+                  <div className="p-3 bg-[#F8F8FA] border-2 border-black rounded-xl space-y-2">
+                    <div className="flex items-center justify-between font-mono text-[11px]">
+                      <span className="text-red-600 font-bold">Stripe Key Exposed (CWE-798)</span>
+                      <span className="text-neutral-400">config/payments.py</span>
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFixedState(!fixedState);
+                      }}
+                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg border-2 border-black shadow-[2px_2px_0px_#111] transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Zap size={14} className="text-amber-300" />
+                      <span>{fixedState ? "✓ Patch Applied & Committed Locally" : "Click 'Apply Fix' Button"}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Card 3: WhatsApp, Discord & Slack Integration (Like "Cashback" in reference image) */}
+            <div
+              className="bg-white border-2 border-black rounded-[32px] p-6 shadow-[6px_6px_0px_#111] transition-all cursor-pointer"
+              onClick={() => setOpenCard(openCard === "integrations" ? ("" as any) : "integrations")}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold tracking-tight text-black">
+                  WhatsApp, Discord & Slack Alerts
+                </h3>
+                <button
+                  type="button"
+                  aria-label="Toggle Integrations details"
+                  className="w-10 h-10 rounded-full border-2 border-black bg-white text-black flex items-center justify-center shadow-[2px_2px_0px_#111] hover:scale-105 transition-transform shrink-0"
+                >
+                  {openCard === "integrations" ? <Minus size={18} /> : <Plus size={18} />}
+                </button>
+              </div>
+
+              {openCard === "integrations" && (
+                <div className="pt-4 space-y-3 text-neutral-600 text-xs leading-relaxed border-t border-neutral-100 mt-3">
+                  <p>
+                    Instant multi-channel push notifications when critical vulnerabilities are found, with direct 1-click PR review links.
+                  </p>
+
+                  <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-[11px] text-center">
+                    <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold">
+                      WhatsApp Cloud
+                    </div>
+                    <div className="p-2 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-800 font-bold">
+                      Discord Webhook
+                    </div>
+                    <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-bold">
+                      Slack Webhook
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* 5-Stage Verification Pipeline Architecture */}
-        <div className="pt-20 text-left space-y-8">
-          <div className="text-center space-y-3 max-w-3xl mx-auto">
-            <span className="text-xs font-mono font-semibold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-              STRICT VERIFICATION GATEWAY
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-              The 5-Stage Blue-Team Pipeline
-            </h2>
-            <p className="text-sm text-zinc-400">
-              Nothing reaches GitHub until it has been synthesized, applied, tested, and proved inside a local, network-isolated Docker sandbox on your device.
+        {/* Bottom 3-Column Highlights Strip */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+          {/* Box 1 */}
+          <div className="bg-white border-2 border-black rounded-[28px] p-6 shadow-[5px_5px_0px_#111] space-y-3">
+            <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-base shadow-[2px_2px_0px_#FF6B53]">
+              <Lock size={18} />
+            </div>
+            <h4 className="text-lg font-bold text-black">100% Local-First</h4>
+            <p className="text-xs text-neutral-600 leading-relaxed">
+              Your source code, databases, and credentials never touch external SaaS clouds. Everything executes inside your local Docker daemon.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-2">
-              <div className="text-xs font-mono font-bold text-blue-400">STAGE 01</div>
-              <h4 className="text-sm font-bold text-white">1. Detect</h4>
-              <p className="text-xs text-zinc-400">SAST AST patterns, secret entropy, Syft SBOM CVEs, and database audits run locally.</p>
+          {/* Box 2 */}
+          <div className="bg-white border-2 border-black rounded-[28px] p-6 shadow-[5px_5px_0px_#111] space-y-3">
+            <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-base shadow-[2px_2px_0px_#FF6B53]">
+              <ShieldCheck size={18} />
             </div>
-            <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-2">
-              <div className="text-xs font-mono font-bold text-amber-400">STAGE 02</div>
-              <h4 className="text-sm font-bold text-white">2. Triage</h4>
-              <p className="text-xs text-zinc-400">Deduplicates findings, evaluates CVSS severity, maps to CWE / OWASP Top 10, and applies policy.</p>
-            </div>
-            <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-2">
-              <div className="text-xs font-mono font-bold text-purple-400">STAGE 03</div>
-              <h4 className="text-sm font-bold text-white">3. Synthesize Fix</h4>
-              <p className="text-xs text-zinc-400">Generates minimal unified diff patch with confidence scoring via local Ollama or cloud LLM.</p>
-            </div>
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-4 space-y-2">
-              <div className="text-xs font-mono font-bold text-emerald-400">STAGE 04 (GATE)</div>
-              <h4 className="text-sm font-bold text-emerald-300">4. Sandbox Gate</h4>
-              <p className="text-xs text-zinc-300">Docker container runs <code className="text-emerald-400 text-[11px]">git apply</code>, your test suite, and re-scans to prove fix with zero regressions.</p>
-            </div>
-            <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-2">
-              <div className="text-xs font-mono font-bold text-cyan-400">STAGE 05</div>
-              <h4 className="text-sm font-bold text-white">5. Safe Delivery</h4>
-              <p className="text-xs text-zinc-400">Creates local branch and opens a GitHub Pull Request or Issue from your machine. Never touches main.</p>
-            </div>
-          </div>
-        </div>
-
-        {/* 6 Pillars of Continuous Security */}
-        <div id="features" className="pt-20 text-left space-y-12">
-          <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-              6 Deep Defense Layers
-            </h2>
-            <p className="text-sm text-zinc-400">
-              Comprehensive blue-team coverage spanning code, dependencies, credentials, databases, infrastructure, and automated sandboxes.
+            <h4 className="text-lg font-bold text-black">Blue-Team Defense Only</h4>
+            <p className="text-xs text-neutral-600 leading-relaxed">
+              Strictly find, fix, and prove. No dangerous exploitation scripts or offensive tooling. Verified fixes pass real tests and linters.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-3 hover:border-blue-500/40 transition-all">
-              <span className="p-3 rounded-xl bg-blue-500/10 text-blue-400 inline-block border border-blue-500/20">
-                <Code2 size={20} />
-              </span>
-              <h3 className="text-base font-bold text-white">1. Code Security (SAST)</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Powered by Semgrep and custom rules. Detects SQL injection, Command Injection, XSS, SSRF, Path Traversal, and Insecure Deserialization across Python, Go, TypeScript, and Java.
-              </p>
+          {/* Box 3 */}
+          <div className="bg-white border-2 border-black rounded-[28px] p-6 shadow-[5px_5px_0px_#111] space-y-3">
+            <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-base shadow-[2px_2px_0px_#FF6B53]">
+              <GitBranch size={18} />
             </div>
-
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-3 hover:border-amber-500/40 transition-all">
-              <span className="p-3 rounded-xl bg-amber-500/10 text-amber-400 inline-block border border-amber-500/20">
-                <ShieldAlert size={20} />
-              </span>
-              <h3 className="text-base font-bold text-white">2. Secrets & Git History</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Entropy analysis and 25+ pattern detectors catch live API keys, private keys, and tokens. Audits historical Git commits and automates migration to environment variables.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-3 hover:border-emerald-500/40 transition-all">
-              <span className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 inline-block border border-emerald-500/20">
-                <Layers size={20} />
-              </span>
-              <h3 className="text-base font-bold text-white">3. Supply Chain & SCA</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Syft SBOM generation and real-time queries to OSV.dev across package.json, requirements.txt, go.mod, and Cargo.toml. Prepares and verifies safe version bumps.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-3 hover:border-indigo-500/40 transition-all">
-              <span className="p-3 rounded-xl bg-indigo-500/10 text-indigo-400 inline-block border border-indigo-500/20">
-                <Cpu size={20} />
-              </span>
-              <h3 className="text-base font-bold text-white">4. Local Database Audits</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Audits local PostgreSQL, MySQL, MongoDB, Redis, and SQLite instances for default passwords, missing authentication, plaintext password fields, and unconfigured Row-Level Security.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-3 hover:border-cyan-500/40 transition-all">
-              <span className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400 inline-block border border-cyan-500/20">
-                <Lock size={20} />
-              </span>
-              <h3 className="text-base font-bold text-white">5. Isolated Docker Sandboxes</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Disposable app containers and throwaway databases seeded strictly with synthetic mock data. Runs with zero outbound internet access to prevent credential leakage.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-3 hover:border-purple-500/40 transition-all">
-              <span className="p-3 rounded-xl bg-purple-500/10 text-purple-400 inline-block border border-purple-500/20">
-                <Award size={20} />
-              </span>
-              <h3 className="text-base font-bold text-white">6. IaC & CI/CD Pipeline Review</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Scans Dockerfiles for non-root enforcement and pinned hashes, checks Terraform and K8s manifests, and detects over-privileged write-all GitHub Actions tokens.
-              </p>
-            </div>
+            <h4 className="text-lg font-bold text-black">Human in the Loop</h4>
+            <p className="text-xs text-neutral-600 leading-relaxed">
+              Every automated patch arrives as an authored Pull Request or GitHub Issue. Zerra never pushes directly to your default branch.
+            </p>
           </div>
         </div>
 
-        {/* Multi-Channel Alerts Showcase Section */}
-        <div id="notifications" className="pt-24 text-left space-y-8">
-          <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-              Push Alerts Straight to Your Incident Channels
-            </h2>
-            <p className="text-sm text-zinc-400">
-              When a critical vulnerability is pushed, your on-call engineering team is notified in seconds via their preferred communication channel.
+        {/* Bottom CTA Banner */}
+        <div className="bg-black text-white border-2 border-black rounded-[36px] p-8 sm:p-12 shadow-[8px_8px_0px_#FF6B53] flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2 text-center md:text-left">
+            <h3 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+              Ready to secure your local repositories?
+            </h3>
+            <p className="text-sm text-neutral-400 max-w-xl">
+              Install the Zerra CLI or start the local web console at <code className="text-[#FF6B53] font-mono">http://localhost:3000</code>.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-950/10 p-5 space-y-3">
-              <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-                <MessageCircle size={18} /> WhatsApp Alerts
-              </div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Direct WhatsApp messages via Meta Cloud API with repository name, vulnerability count, and 1-click PR review links.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-indigo-500/20 bg-indigo-950/10 p-5 space-y-3">
-              <div className="flex items-center gap-2 text-indigo-400 font-bold text-sm">
-                <Zap size={18} /> Discord Webhooks
-              </div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Rich color-coded embeds with severity badges, CVSS scores, code snippets, and author attribution.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-blue-500/20 bg-blue-950/10 p-5 space-y-3">
-              <div className="flex items-center gap-2 text-blue-400 font-bold text-sm">
-                <Users size={18} /> Microsoft Teams
-              </div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Enterprise Adaptive Cards formatted with collapsible details, facts tables, and action buttons for SOC workflows.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-purple-500/20 bg-purple-950/10 p-5 space-y-3">
-              <div className="flex items-center gap-2 text-purple-400 font-bold text-sm">
-                <Mail size={18} /> Email Reports
-              </div>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Clean HTML security digests with executive posture summary and tabular findings sent via SMTP.
-              </p>
-            </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <Link
+              href="/dashboard"
+              className="px-7 py-3.5 bg-[#FF6B53] text-white font-bold text-sm rounded-xl border-2 border-white shadow-[3px_3px_0px_#FFFFFF] hover:shadow-[1px_1px_0px_#FFFFFF] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+            >
+              Open Dashboard
+            </Link>
           </div>
         </div>
 
-        {/* Local Credential Vault & Zero-Telemetry Privacy Guarantees */}
-        <div id="compliance" className="pt-24 text-left space-y-8">
-          <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <span className="text-xs font-mono font-semibold text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
-              ZERO-TELEMETRY GUARANTEE
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-              Your Code & Credentials Never Leave Your Machine
-            </h2>
-            <p className="text-sm text-zinc-400">
-              Zerra is engineered from the ground up for strict sovereign privacy, enterprise compliance, and zero cloud dependency.
-            </p>
+        {/* Minimal Footer */}
+        <footer className="pt-8 border-t border-neutral-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-500 font-mono">
+          <div>
+            © 2026 Zerra Security Platform. Open source under GPL-3.0.
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-3">
-              <div className="h-10 w-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold">
-                <Lock size={20} />
-              </div>
-              <h3 className="text-base font-bold text-white">OS-Native Keychain Vault</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                GitHub PATs, SSH keys, and database credentials are stored in your operating system keychain (Windows Credential Manager, macOS Keychain, Linux Secret Service).
-              </p>
-              <div className="text-[11px] text-zinc-500 font-mono">
-                Fallback: AES-256-GCM + scrypt (0o600)
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-3">
-              <div className="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">
-                <ShieldCheck size={20} />
-              </div>
-              <h3 className="text-base font-bold text-white">Disposable Docker Sandboxes</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Every patch verification and test execution happens in disposable containers with synthetic mock data. Sandboxes run on an internal network bridge with zero outbound internet access.
-              </p>
-              <div className="text-[11px] text-emerald-400 font-mono">
-                Automatic clean teardown on finish
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-3">
-              <div className="h-10 w-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 font-bold">
-                <Award size={20} />
-              </div>
-              <h3 className="text-base font-bold text-white">Tamper-Evident Audit & SARIF</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Generates OASIS SARIF v2.1.0 for GitHub Security tab integration, SPDX/CycloneDX SBOMs, and cryptographic hash-chained audit trails of every scan decision.
-              </p>
-              <div className="text-[11px] text-purple-400 font-mono">
-                OWASP Top 10 & CWE mapped
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Final CTA Strip */}
-        <div className="pt-24">
-          <div className="rounded-3xl border border-blue-500/30 bg-gradient-to-br from-blue-950/40 via-indigo-950/30 to-black p-8 sm:p-14 text-center space-y-6 relative overflow-hidden shadow-2xl">
-            <div className="space-y-3 max-w-2xl mx-auto">
-              <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-                Secure Your Repositories Autonomously
-              </h2>
-              <p className="text-sm sm:text-base text-zinc-400">
-                Connect your GitHub repository and let Zerra autonomously audit your code on every push and pull request.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-              <Link
-                href="/dashboard/repositories"
-                className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-xl shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                Connect Your First Repo
-              </Link>
-              <Link
-                href="/dashboard"
-                className="px-8 py-3.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.12] text-white font-semibold text-sm transition-all"
-              >
-                Open Unified Dashboard
-              </Link>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-white/[0.08] py-10 text-xs text-zinc-500">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-blue-600 flex items-center justify-center font-bold text-white text-xs">
-              Z
-            </div>
-            <span className="font-semibold text-zinc-300">Zerra Security</span>
-            <span>• Autonomous Continuous Security & Auto-PR Platform</span>
-          </div>
-
           <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="hover:text-zinc-300 transition-colors">Console</Link>
-            <Link href="/dashboard/repositories" className="hover:text-zinc-300 transition-colors">Repositories</Link>
-            <Link href="/dashboard/scans" className="hover:text-zinc-300 transition-colors">Scans</Link>
-            <Link href="/dashboard/findings" className="hover:text-zinc-300 transition-colors">Findings</Link>
-            <Link href="/dashboard/notifications" className="hover:text-zinc-300 transition-colors">Notifications</Link>
-            <a href="https://github.com/sjsreehari/zerra" target="_blank" rel="noreferrer" className="hover:text-zinc-300 transition-colors">GitHub</a>
+            <a href="https://github.com/sjsreehari/zerra" target="_blank" rel="noreferrer" className="hover:text-black transition-colors">
+              GitHub
+            </a>
+            <Link href="/dashboard" className="hover:text-black transition-colors">
+              Dashboard
+            </Link>
+            <a href="https://github.com/sjsreehari/zerra/blob/main/docs/ARCHITECTURE.md" target="_blank" rel="noreferrer" className="hover:text-black transition-colors">
+              Architecture Spec
+            </a>
           </div>
-        </div>
-      </footer>
+        </footer>
+      </main>
     </div>
   );
 }
