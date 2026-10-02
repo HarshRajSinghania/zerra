@@ -31,32 +31,8 @@ Zerra then clones, builds, executes, and verifies tests **entirely on your devic
 
 ## How It Works
 
-```
- ┌──────────────┐      ┌─────────────────────────┐      ┌─────────────────────────┐
- │ 1. Log In    │ ───► │ 2. Add Credentials      │ ───► │ 3. Select Project       │
- │  localhost   │      │ OS Keychain / AES Vault │      │ Local folder or Git repo│
- └──────────────┘      └─────────────────────────┘      └───────────┬─────────────┘
-                                                                    │
- ┌──────────────────────────────────────────────────────────────────┴─────────────┐
- │  4. Isolated Sandbox Spun Up (Docker / Throwaway DB / Synthetic Data)          │
- ├────────────────────────────────────────────────────────────────────────────────┤
- │  5. Blue-Team Analysis (SAST, Secrets, SBOM/OSV, DB Audit, IaC & CI/CD)        │
- ├────────────────────────────────────────────────────────────────────────────────┤
- │  6. Fix & Verification Gate (Unified Diff, git apply --check, Tests, Re-scan)  │
- └──────────────────────────────────┬─────────────────────────────────────────────┘
-                                    │
-                                    ▼
-                       ┌─────────────────────────┐
-                       │ 7. PR From Your Device  │
-                       │ Branch pushed to GitHub │
-                       └────────────┬────────────┘
-                                    │
-                                    ▼
-                       ┌─────────────────────────┐
-                       │ 8. Human-in-the-Loop    │
-                       │ Review, edit, or merge  │
-                       └─────────────────────────┘
-```
+![How It Works](docs/images/howitworks.png)
+
 
 1. **Log in** to your local dashboard running on `http://localhost:3000`.
 2. **Add credentials** on the Credentials page: GitHub access (fine-grained Personal Access Token or SSH deploy key), database connection strings, API keys, and `.env` values. These are stored in your encrypted local vault (OS keychain with an authenticated AES-256-GCM fallback).
