@@ -1,14 +1,4 @@
 <div align="center">
-
-```
- ███████╗███████╗██████╗ ██████╗  █████╗
- ╚══███╔╝██╔════╝██╔══██╗██╔══██╗██╔══██╗
-   ███╔╝ █████╗  ██████╔╝██████╔╝███████║
-  ███╔╝  ██╔══╝  ██╔══██╗██╔══██╗██╔══██║
- ███████╗███████╗██║  ██║██║  ██║██║  ██║
- ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
-```
-
 # Zerra: A Local-First, Blue-Team Security Platform
 
 **Your security engineer, running on your own machine. It tests everything locally, fixes what it finds, and sends the fixes to GitHub as pull requests.**
