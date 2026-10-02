@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -11,27 +11,51 @@ import {
   GitCommit,
   GitPullRequest,
   Lock,
-  MessageCircle,
+  Menu,
   Minus,
   Plus,
-  Shield,
   ShieldCheck,
   Sparkles,
-  Terminal,
+  X,
   Zap,
+  Loader2,
 } from "lucide-react";
 
 export default function HomePage() {
+  // Mobile navigation menu toggle
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // First card ("auto-pr") is expanded on loading by default, and can be shrunk
   const [openCard, setOpenCard] = useState<string | null>("auto-pr");
   const [fixedState, setFixedState] = useState(false);
   const [prCreated, setPrCreated] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Waitlist modal state
+  // Waitlist state
   const [showWaitlist, setShowWaitlist] = useState(false);
   const [email, setEmail] = useState("");
-  const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [waitlistResult, setWaitlistResult] = useState<{
+    position: number;
+    alreadyRegistered?: boolean;
+    message: string;
+  } | null>(null);
+  const [waitlistError, setWaitlistError] = useState<string | null>(null);
+
+  // Live count state fetched from Supabase server API
+  const [totalWaitlistCount, setTotalWaitlistCount] = useState<number>(300);
+
+  useEffect(() => {
+    // Fetch live waitlist count from server API (which queries Supabase securely)
+    fetch("/api/waitlist")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && typeof data.totalCount === "number") {
+          setTotalWaitlistCount(data.totalCount);
+        }
+      })
+      .catch((err) => console.warn("Could not load waitlist count:", err));
+  }, []);
 
   const copyInstallCmd = () => {
     navigator.clipboard.writeText("npx zerra init");
@@ -39,29 +63,60 @@ export default function HomePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleWaitlistSubmit = (e: React.FormEvent) => {
+  const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) {
-      setWaitlistSubmitted(true);
+    if (!email.trim()) return;
+
+    setIsSubmitting(true);
+    setWaitlistError(null);
+
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setWaitlistError(data.error || "Failed to join waitlist. Please try again.");
+      } else {
+        setWaitlistResult({
+          position: data.position,
+          alreadyRegistered: data.alreadyRegistered,
+          message: data.message,
+        });
+        if (!data.alreadyRegistered && data.position > totalWaitlistCount) {
+          setTotalWaitlistCount(data.position);
+        }
+      }
+    } catch (err) {
+      setWaitlistError("Network error. Please check your connection.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-[#F8F8FA] text-[#111827] font-sans antialiased selection:bg-[#FF6B53] selection:text-white">
       {/* Top Navbar */}
-      <header className="max-w-7xl mx-auto px-6 sm:px-10 pt-8 pb-6 flex items-center justify-between">
-        {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-6 h-6 rounded-full bg-black flex items-center justify-center text-white text-xs font-black shadow-[2px_2px_0px_#FF6B53]">
-            ●
+      <header className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-10 pt-6 sm:pt-8 pb-5 flex items-center justify-between relative">
+        {/* Brand Logo with Eclipse Logo */}
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="w-9 h-9 rounded-xl bg-black border-2 border-black flex items-center justify-center overflow-hidden shadow-[2px_2px_0px_#FF6B53] group-hover:scale-105 transition-transform">
+            <img
+              src="/images/logo.png"
+              alt="Zerra Eclipse Logo"
+              className="w-full h-full object-cover"
+            />
           </div>
           <span className="font-extrabold text-2xl tracking-tight text-black">
             zerra
           </span>
         </Link>
 
-        {/* Center Nav Links */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-neutral-600">
+        {/* Center Nav Links - Desktop */}
+        <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-neutral-600">
           <a href="#how-it-works" className="hover:text-black transition-colors">
             How it works
           </a>
@@ -81,118 +136,218 @@ export default function HomePage() {
           </a>
         </nav>
 
-        {/* Right CTA Links - No redirection to local dashboard */}
-        <div className="flex items-center gap-4">
+        {/* Right CTA Links */}
+        <div className="hidden sm:flex items-center gap-3">
           <button
-            onClick={() => setShowWaitlist(true)}
-            className="text-sm font-semibold text-neutral-700 hover:text-black px-2 py-1 transition-colors hidden sm:inline-block"
+            onClick={() => {
+              setWaitlistResult(null);
+              setWaitlistError(null);
+              setShowWaitlist(true);
+            }}
+            className="px-4 py-2 text-xs font-bold text-black border-2 border-black rounded-xl bg-amber-200 shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex items-center gap-1.5"
           >
-            Join Waitlist
+            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+            <span>Join Waitlist (300+)</span>
           </button>
+
           <a
             href="https://github.com/sjsreehari/zerra"
             target="_blank"
             rel="noreferrer"
-            className="px-5 py-2.5 text-xs font-bold text-black border-2 border-black rounded-xl bg-white shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+            className="px-4 py-2 text-xs font-bold text-black border-2 border-black rounded-xl bg-white shadow-[2px_2px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
           >
             Star on GitHub
           </a>
         </div>
+
+        {/* Mobile Hamburger Button */}
+        <div className="flex sm:hidden items-center gap-2">
+          <button
+            onClick={() => {
+              setWaitlistResult(null);
+              setWaitlistError(null);
+              setShowWaitlist(true);
+            }}
+            className="px-3 py-1.5 text-xs font-bold text-black border-2 border-black rounded-lg bg-amber-200 shadow-[2px_2px_0px_#111]"
+          >
+            Waitlist (300+)
+          </button>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 border-2 border-black rounded-xl bg-white shadow-[2px_2px_0px_#111] text-black"
+            aria-label="Toggle Navigation"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+
+        {/* Mobile Dropdown Menu */}
+        {mobileMenuOpen && (
+          <div className="absolute top-full left-4 right-4 z-40 bg-white border-2 border-black rounded-2xl p-5 shadow-[6px_6px_0px_#111] flex flex-col gap-4 mt-2 sm:hidden animate-in fade-in duration-150">
+            <a
+              href="#how-it-works"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-sm font-bold text-neutral-800 hover:text-black py-1"
+            >
+              How it works
+            </a>
+            <a
+              href="#features"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-sm font-bold text-neutral-800 hover:text-black py-1"
+            >
+              Local engine
+            </a>
+            <a
+              href="#integrations"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-sm font-bold text-neutral-800 hover:text-black py-1"
+            >
+              Integrations
+            </a>
+            <a
+              href="https://github.com/sjsreehari/zerra/blob/main/docs/ARCHITECTURE.md"
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-sm font-bold text-neutral-800 hover:text-black py-1"
+            >
+              Docs & Architecture
+            </a>
+            <div className="pt-2 border-t border-neutral-200 flex flex-col gap-2">
+              <a
+                href="https://github.com/sjsreehari/zerra"
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-2.5 text-center text-xs font-bold text-black border-2 border-black rounded-xl bg-neutral-100 shadow-[2px_2px_0px_#111]"
+              >
+                GitHub Repository
+              </a>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-6 sm:px-10 pt-8 pb-24 space-y-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-10 pt-6 sm:pt-10 pb-20 space-y-12 sm:space-y-16">
         {/* Hero Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
-          {/* Giant Title */}
-          <div className="lg:col-span-8">
-            <h1 className="text-5xl sm:text-7xl lg:text-[84px] font-black text-black tracking-[-0.03em] leading-[1.02]">
-              Security that <br />
-              checks every commit
-            </h1>
+        <div className="space-y-6">
+          {/* Waitlist pill badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-amber-100 border-2 border-black rounded-full text-xs font-mono font-bold shadow-[2px_2px_0px_#111]">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-black">
+              Waitlist Live: <strong className="text-black underline">300+</strong> builders waiting • Next spot: <span className="text-[#FF6B53]">#{totalWaitlistCount + 1}</span>
+            </span>
           </div>
 
-          {/* Subtitle & Quick CTAs */}
-          <div className="lg:col-span-4 space-y-5 pb-2">
-            <p className="text-base sm:text-lg text-neutral-700 leading-relaxed font-normal">
-              Your autonomous blue-team security engineer running strictly on your local machine. It tests every commit in isolated Docker sandboxes, fixes vulnerabilities with a 1-click button, and opens verified Pull Requests on push.
-            </p>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+            {/* Giant Title */}
+            <div className="lg:col-span-8">
+              <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-[80px] xl:text-[84px] font-black text-black tracking-[-0.03em] leading-[1.04]">
+                Security that <br />
+                checks every commit
+              </h1>
+            </div>
 
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <button
-                onClick={() => setShowWaitlist(true)}
-                className="px-6 py-3.5 bg-black hover:bg-neutral-800 text-white font-bold text-sm rounded-xl shadow-[4px_4px_0px_#FF6B53] hover:shadow-[2px_2px_0px_#FF6B53] hover:translate-x-[2px] hover:translate-y-[2px] transition-all inline-flex items-center gap-2"
-              >
-                <span>Join the Waitlist</span>
-                <ArrowRight size={15} />
-              </button>
+            {/* Subtitle & Quick CTAs */}
+            <div className="lg:col-span-4 space-y-5 pb-2">
+              <p className="text-sm sm:text-base text-neutral-700 leading-relaxed font-normal">
+                Your autonomous blue-team security engineer running strictly on your local machine. It tests every commit in isolated Docker sandboxes, fixes vulnerabilities with a 1-click button, and opens verified Pull Requests on push.
+              </p>
 
-              <button
-                onClick={copyInstallCmd}
-                className="px-4 py-3.5 bg-white border-2 border-black text-black font-mono text-xs font-semibold rounded-xl shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all inline-flex items-center gap-2"
-              >
-                {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                <span>npx zerra init</span>
-              </button>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+                <button
+                  onClick={() => {
+                    setWaitlistResult(null);
+                    setWaitlistError(null);
+                    setShowWaitlist(true);
+                  }}
+                  className="px-6 py-3.5 bg-black hover:bg-neutral-800 text-white font-bold text-sm rounded-xl shadow-[4px_4px_0px_#FF6B53] hover:shadow-[2px_2px_0px_#FF6B53] hover:translate-x-[2px] hover:translate-y-[2px] transition-all inline-flex items-center justify-center gap-2"
+                >
+                  <span>Join the Waitlist</span>
+                  <ArrowRight size={15} />
+                </button>
+
+                <button
+                  onClick={copyInstallCmd}
+                  className="px-4 py-3.5 bg-white border-2 border-black text-black font-mono text-xs font-semibold rounded-xl shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all inline-flex items-center justify-center gap-2"
+                >
+                  {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                  <span>npx zerra init</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Feature Cards Grid (Matching the Reference UI Layout) */}
-        <div id="features" className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pt-4">
-          {/* Left Column: Big Feature Card (Like "Latest updates" card in reference image) */}
-          <div className="lg:col-span-7 bg-white border-2 border-black rounded-[32px] p-7 sm:p-9 shadow-[6px_6px_0px_#111] space-y-6 flex flex-col justify-between min-h-[520px]">
+        {/* Minimal Zerra Eclipse Banner Showcase */}
+        <div className="w-full border-2 border-black rounded-[24px] sm:rounded-[32px] overflow-hidden shadow-[6px_6px_0px_#111] bg-black relative group">
+          <img
+            src="/images/logo.png"
+            alt="Minimal Zerra Eclipse Banner"
+            className="w-full h-48 sm:h-72 md:h-96 object-cover object-center group-hover:scale-[1.01] transition-transform duration-500"
+          />
+          <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 px-3.5 py-1.5 bg-black/80 backdrop-blur-md border border-white/20 rounded-full text-white text-xs font-mono font-medium flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#FF6B53]" />
+            <span>Zerra Autonomous Blue-Team Security Engine</span>
+          </div>
+        </div>
+
+        {/* Feature Cards Grid (Neo-Brutalist Layout) */}
+        <div id="features" className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pt-2">
+          {/* Left Column: Big Feature Card */}
+          <div className="lg:col-span-7 bg-white border-2 border-black rounded-[24px] sm:rounded-[32px] p-6 sm:p-9 shadow-[6px_6px_0px_#111] space-y-6 flex flex-col justify-between min-h-[500px]">
             {/* Header with Title and Version */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between border-b-2 border-neutral-100 pb-3">
-                <span className="text-sm font-bold uppercase tracking-wider text-black">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-neutral-100 pb-3">
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-black">
                   Local Commit Engine
                 </span>
-                <span className="text-xs font-mono font-bold text-neutral-400">
+                <span className="text-[11px] sm:text-xs font-mono font-bold text-neutral-400">
                   v. 2.4.0 • Sandbox Active
                 </span>
               </div>
 
-              <div className="space-y-2 pt-2">
+              <div className="space-y-2 pt-1">
                 <h3 className="text-2xl sm:text-3xl font-bold text-black tracking-tight">
                   Checks code locally on every single commit
                 </h3>
-                <p className="text-sm text-neutral-600 leading-relaxed max-w-xl">
+                <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed max-w-xl">
                   Every commit triggers disposable Docker containers on your machine. Zerra seeds throwaway databases with synthetic data, runs Semgrep SAST, scans dependencies, and verifies fixes with <code className="bg-neutral-100 px-1.5 py-0.5 rounded font-mono text-xs text-black border border-neutral-200">git apply --check</code> before anything touches production.
                 </p>
               </div>
             </div>
 
             {/* Visual Isometric Stack / Sandbox Simulator */}
-            <div className="relative my-4 p-5 bg-[#F8F8FA] border-2 border-black rounded-2xl shadow-[4px_4px_0px_#111] overflow-hidden space-y-3">
-              <div className="flex items-center justify-between text-xs font-mono text-neutral-500 border-b border-neutral-200 pb-2">
+            <div className="relative my-2 p-4 sm:p-5 bg-[#F8F8FA] border-2 border-black rounded-2xl shadow-[4px_4px_0px_#111] overflow-hidden space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-neutral-500 border-b border-neutral-200 pb-2">
                 <span className="flex items-center gap-1.5 text-black font-bold">
-                  <GitCommit size={14} className="text-[#FF6B53]" />
-                  commit 8f2b41c (feat: checkout endpoint)
+                  <GitCommit size={14} className="text-[#FF6B53] shrink-0" />
+                  <span className="truncate">commit 8f2b41c (feat: checkout endpoint)</span>
                 </span>
-                <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-semibold border border-emerald-300">
-                  ● Sandbox: All Tests Passed
+                <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-semibold border border-emerald-300 text-[11px] shrink-0">
+                  ● All Tests Passed
                 </span>
               </div>
 
               {/* Layer 1: SAST Finding */}
               <div className="p-3 bg-white border border-neutral-300 rounded-xl space-y-1.5 text-xs font-mono">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-1">
                   <span className="text-red-600 font-bold">SAST • SQL Injection (CWE-89)</span>
-                  <span className="text-neutral-400">internal/db/users.go:42</span>
+                  <span className="text-neutral-400 text-[11px]">internal/db/users.go:42</span>
                 </div>
-                <div className="text-neutral-700 bg-red-50/60 p-2 rounded border border-red-200 text-[11px] overflow-x-auto">
+                <div className="text-neutral-700 bg-red-50/60 p-2.5 rounded border border-red-200 text-[11px] overflow-x-auto whitespace-pre font-mono">
                   <span className="text-red-500 line-through">- query := &quot;SELECT * FROM users WHERE id = &apos;&quot; + id + &quot;&apos;&quot;</span>
-                  <br />
+                  {"\n"}
                   <span className="text-emerald-600 font-bold">+ row := db.QueryRow(&quot;SELECT * FROM users WHERE id = $1&quot;, id)</span>
                 </div>
               </div>
 
               {/* Layer 2: Verification Status */}
-              <div className="flex items-center justify-between text-xs pt-1">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-1">
                 <span className="flex items-center gap-1.5 text-neutral-600">
-                  <ShieldCheck size={14} className="text-emerald-600" />
-                  Isolated network bridge (zero internet outbound)
+                  <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
+                  <span>Isolated network bridge (zero internet outbound)</span>
                 </span>
                 <span className="font-mono text-[11px] text-neutral-400">0 regressions</span>
               </div>
@@ -214,15 +369,15 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Right Column: Stacked Cards (Matching the Red Card + White Accordion in reference) */}
+          {/* Right Column: Stacked Interactive Cards */}
           <div className="lg:col-span-5 space-y-5">
-            {/* Card 1: Vibrant Coral Accent Card (Expanded on load by default, and can shrink) */}
+            {/* Card 1: Coral Accent Card (Expanded on load by default, and can shrink) */}
             <div
-              className="bg-[#FF6B53] text-white border-2 border-black rounded-[32px] p-7 shadow-[6px_6px_0px_#111] transition-all cursor-pointer"
+              className="bg-[#FF6B53] text-white border-2 border-black rounded-[24px] sm:rounded-[32px] p-6 sm:p-7 shadow-[6px_6px_0px_#111] transition-all cursor-pointer"
               onClick={() => setOpenCard(openCard === "auto-pr" ? null : "auto-pr")}
             >
-              <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-bold tracking-tight text-white">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
                   Auto-PR on Push to Prod
                 </h3>
                 <button
@@ -232,22 +387,22 @@ export default function HomePage() {
                     setOpenCard(openCard === "auto-pr" ? null : "auto-pr");
                   }}
                   aria-label="Toggle Auto-PR details"
-                  className="w-10 h-10 rounded-full border-2 border-black bg-white text-black flex items-center justify-center shadow-[2px_2px_0px_#111] hover:scale-105 transition-transform shrink-0"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-black bg-white text-black flex items-center justify-center shadow-[2px_2px_0px_#111] hover:scale-105 transition-transform shrink-0"
                 >
                   {openCard === "auto-pr" ? <Minus size={18} /> : <Plus size={18} />}
                 </button>
               </div>
 
               {openCard === "auto-pr" && (
-                <div className="pt-4 space-y-4 text-white/95 text-sm leading-relaxed">
+                <div className="pt-4 space-y-4 text-white/95 text-xs sm:text-sm leading-relaxed">
                   <p>
                     When code is pushed toward main or production branches, Zerra autonomously verifies all proposed fixes inside isolated Docker sandboxes and creates a formatted GitHub Pull Request for human review.
                   </p>
 
-                  <div className="p-3 bg-black/20 border border-black/20 rounded-xl space-y-2">
-                    <div className="flex items-center justify-between text-xs font-mono">
+                  <div className="p-3 bg-black/25 border border-black/20 rounded-xl space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-1 text-xs font-mono">
                       <span>Branch: <code className="text-yellow-200">zerra/fix-cwe-89</code></span>
-                      <span className="font-bold text-white bg-black/40 px-2 py-0.5 rounded">Target: main</span>
+                      <span className="font-bold text-white bg-black/40 px-2 py-0.5 rounded text-[11px]">Target: main</span>
                     </div>
 
                     <button
@@ -265,13 +420,13 @@ export default function HomePage() {
               )}
             </div>
 
-            {/* Card 2: 1-Click Manual Fix Button (Like "Recieve money" in reference image) */}
+            {/* Card 2: 1-Click Manual Fix Button */}
             <div
-              className="bg-white border-2 border-black rounded-[32px] p-6 shadow-[6px_6px_0px_#111] transition-all cursor-pointer"
+              className="bg-white border-2 border-black rounded-[24px] sm:rounded-[32px] p-6 shadow-[6px_6px_0px_#111] transition-all cursor-pointer"
               onClick={() => setOpenCard(openCard === "manual-fix" ? null : "manual-fix")}
             >
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold tracking-tight text-black">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-lg sm:text-xl font-bold tracking-tight text-black">
                   1-Click Manual Fix Button
                 </h3>
                 <button
@@ -281,7 +436,7 @@ export default function HomePage() {
                     setOpenCard(openCard === "manual-fix" ? null : "manual-fix");
                   }}
                   aria-label="Toggle Manual Fix details"
-                  className="w-10 h-10 rounded-full border-2 border-black bg-white text-black flex items-center justify-center shadow-[2px_2px_0px_#111] hover:scale-105 transition-transform shrink-0"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-black bg-white text-black flex items-center justify-center shadow-[2px_2px_0px_#111] hover:scale-105 transition-transform shrink-0"
                 >
                   {openCard === "manual-fix" ? <Minus size={18} /> : <Plus size={18} />}
                 </button>
@@ -294,7 +449,7 @@ export default function HomePage() {
                   </p>
 
                   <div className="p-3 bg-[#F8F8FA] border-2 border-black rounded-xl space-y-2">
-                    <div className="flex items-center justify-between font-mono text-[11px]">
+                    <div className="flex flex-wrap items-center justify-between gap-1 font-mono text-[11px]">
                       <span className="text-red-600 font-bold">Stripe Key Exposed (CWE-798)</span>
                       <span className="text-neutral-400">config/payments.py</span>
                     </div>
@@ -314,13 +469,13 @@ export default function HomePage() {
               )}
             </div>
 
-            {/* Card 3: WhatsApp, Discord & Slack Integration (Like "Cashback" in reference image) */}
+            {/* Card 3: WhatsApp, Discord & Slack Integration */}
             <div
-              className="bg-white border-2 border-black rounded-[32px] p-6 shadow-[6px_6px_0px_#111] transition-all cursor-pointer"
+              className="bg-white border-2 border-black rounded-[24px] sm:rounded-[32px] p-6 shadow-[6px_6px_0px_#111] transition-all cursor-pointer"
               onClick={() => setOpenCard(openCard === "integrations" ? null : "integrations")}
             >
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold tracking-tight text-black">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-lg sm:text-xl font-bold tracking-tight text-black">
                   WhatsApp, Discord & Slack Alerts
                 </h3>
                 <button
@@ -330,7 +485,7 @@ export default function HomePage() {
                     setOpenCard(openCard === "integrations" ? null : "integrations");
                   }}
                   aria-label="Toggle Integrations details"
-                  className="w-10 h-10 rounded-full border-2 border-black bg-white text-black flex items-center justify-center shadow-[2px_2px_0px_#111] hover:scale-105 transition-transform shrink-0"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-black bg-white text-black flex items-center justify-center shadow-[2px_2px_0px_#111] hover:scale-105 transition-transform shrink-0"
                 >
                   {openCard === "integrations" ? <Minus size={18} /> : <Plus size={18} />}
                 </button>
@@ -342,14 +497,14 @@ export default function HomePage() {
                     Instant multi-channel push notifications when critical vulnerabilities are found, with direct 1-click PR review links.
                   </p>
 
-                  <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-[11px] text-center">
-                    <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 font-mono text-[11px] text-center">
+                    <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold">
                       WhatsApp Cloud
                     </div>
-                    <div className="p-2 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-800 font-bold">
+                    <div className="p-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-800 font-bold">
                       Discord Webhook
                     </div>
-                    <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-bold">
+                    <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-bold">
                       Slack Webhook
                     </div>
                   </div>
@@ -360,9 +515,9 @@ export default function HomePage() {
         </div>
 
         {/* Bottom 3-Column Highlights Strip */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+        <div id="how-it-works" className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
           {/* Box 1 */}
-          <div className="bg-white border-2 border-black rounded-[28px] p-6 shadow-[5px_5px_0px_#111] space-y-3">
+          <div className="bg-white border-2 border-black rounded-[24px] sm:rounded-[28px] p-6 shadow-[5px_5px_0px_#111] space-y-3">
             <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-base shadow-[2px_2px_0px_#FF6B53]">
               <Lock size={18} />
             </div>
@@ -373,7 +528,7 @@ export default function HomePage() {
           </div>
 
           {/* Box 2 */}
-          <div className="bg-white border-2 border-black rounded-[28px] p-6 shadow-[5px_5px_0px_#111] space-y-3">
+          <div className="bg-white border-2 border-black rounded-[24px] sm:rounded-[28px] p-6 shadow-[5px_5px_0px_#111] space-y-3">
             <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-base shadow-[2px_2px_0px_#FF6B53]">
               <ShieldCheck size={18} />
             </div>
@@ -384,7 +539,7 @@ export default function HomePage() {
           </div>
 
           {/* Box 3 */}
-          <div className="bg-white border-2 border-black rounded-[28px] p-6 shadow-[5px_5px_0px_#111] space-y-3">
+          <div className="bg-white border-2 border-black rounded-[24px] sm:rounded-[28px] p-6 shadow-[5px_5px_0px_#111] space-y-3">
             <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-base shadow-[2px_2px_0px_#FF6B53]">
               <GitBranch size={18} />
             </div>
@@ -395,21 +550,28 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Bottom CTA Banner - Cleaned up to Join Waitlist */}
-        <div className="bg-black text-white border-2 border-black rounded-[36px] p-8 sm:p-12 shadow-[8px_8px_0px_#FF6B53] flex flex-col md:flex-row items-center justify-between gap-6">
+        {/* Bottom CTA Banner */}
+        <div className="bg-black text-white border-2 border-black rounded-[28px] sm:rounded-[36px] p-7 sm:p-12 shadow-[8px_8px_0px_#FF6B53] flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center md:text-left">
-            <h3 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+            <div className="inline-block px-3 py-1 bg-[#FF6B53] text-white font-mono text-[11px] font-bold rounded-full mb-1">
+              300+ IN LINE • CURRENT SPOT #{totalWaitlistCount + 1}
+            </div>
+            <h3 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
               Ready to secure your local repositories?
             </h3>
-            <p className="text-sm text-neutral-300 max-w-xl">
+            <p className="text-xs sm:text-sm text-neutral-300 max-w-xl">
               Get early access to autonomous local-first blue-team security and automated verified pull requests.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-3 shrink-0 w-full md:w-auto">
             <button
-              onClick={() => setShowWaitlist(true)}
-              className="px-7 py-3.5 bg-[#FF6B53] text-white font-bold text-sm rounded-xl border-2 border-white shadow-[3px_3px_0px_#FFFFFF] hover:shadow-[1px_1px_0px_#FFFFFF] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center gap-2"
+              onClick={() => {
+                setWaitlistResult(null);
+                setWaitlistError(null);
+                setShowWaitlist(true);
+              }}
+              className="w-full md:w-auto px-7 py-3.5 bg-[#FF6B53] text-white font-bold text-sm rounded-xl border-2 border-white shadow-[3px_3px_0px_#FFFFFF] hover:shadow-[1px_1px_0px_#FFFFFF] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center justify-center gap-2"
             >
               <span>Join the Waitlist</span>
               <ArrowRight size={15} />
@@ -417,8 +579,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Minimal Footer - Direct link to ARCHITECTURE.md and no local dashboard link */}
-        <footer className="pt-8 border-t border-neutral-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-500 font-mono">
+        {/* Minimal Footer */}
+        <footer className="pt-8 border-t border-neutral-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-500 font-mono text-center sm:text-left">
           <div>
             © 2026 Zerra Security Platform. Open source under GPL-3.0.
           </div>
@@ -441,18 +603,18 @@ export default function HomePage() {
       {/* Join Waitlist Modal */}
       {showWaitlist && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150 overflow-y-auto"
           onClick={() => setShowWaitlist(false)}
         >
           <div
-            className="w-full max-w-md bg-white border-2 border-black rounded-[32px] p-7 sm:p-8 shadow-[8px_8px_0px_#111] space-y-5"
+            className="w-full max-w-md bg-white border-2 border-black rounded-[28px] sm:rounded-[32px] p-6 sm:p-8 shadow-[8px_8px_0px_#111] space-y-5 my-8"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-[#FF6B53]" />
                 <span className="text-xs font-mono font-bold uppercase text-neutral-500">
-                  Early Access
+                  Priority Early Access
                 </span>
               </div>
               <button
@@ -472,32 +634,78 @@ export default function HomePage() {
               </p>
             </div>
 
-            {waitlistSubmitted ? (
-              <div className="p-4 bg-emerald-50 border-2 border-emerald-400 rounded-2xl text-center space-y-1">
-                <div className="text-sm font-bold text-emerald-800 flex items-center justify-center gap-1.5">
-                  <Check size={16} /> You&apos;re on the list!
+            {waitlistResult ? (
+              <div className="p-5 bg-amber-50 border-2 border-black rounded-2xl text-center space-y-3 shadow-[3px_3px_0px_#111]">
+                {/* Big Waitlist Number Badge */}
+                <div className="inline-block px-4 py-2 bg-black text-white font-mono font-black text-xl rounded-xl shadow-[3px_3px_0px_#FF6B53]">
+                  SPOT #{waitlistResult.position}
                 </div>
-                <p className="text-xs text-emerald-700">
-                  We&apos;ll reach out to <span className="font-mono font-bold">{email}</span> with your early access invite.
-                </p>
+
+                <div className="space-y-1">
+                  <div className="text-sm font-black text-black">
+                    {waitlistResult.alreadyRegistered
+                      ? "You are already on the list!"
+                      : "Welcome aboard! Spot secured."}
+                  </div>
+                  <p className="text-xs text-neutral-700 leading-relaxed font-mono">
+                    You are <strong className="text-black">#{waitlistResult.position}</strong> in the queue. 300+ engineers have joined ahead.
+                  </p>
+                  <p className="text-[11px] text-neutral-500 pt-1">
+                    Invite will be dispatched to <span className="font-bold font-mono text-black">{email}</span>.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setShowWaitlist(false)}
+                  className="w-full py-2.5 bg-black hover:bg-neutral-800 text-white font-bold text-xs rounded-xl transition-all"
+                >
+                  Done
+                </button>
               </div>
             ) : (
-              <form onSubmit={handleWaitlistSubmit} className="space-y-3">
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your work email..."
-                  className="w-full px-4 py-3 bg-[#F8F8FA] border-2 border-black rounded-xl text-xs text-black placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B53] font-mono"
-                />
+              <form onSubmit={handleWaitlistSubmit} className="space-y-3.5">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-mono font-bold text-neutral-700 flex items-center justify-between">
+                    <span>Work Email</span>
+                    <span className="text-[#FF6B53] text-[11px]">Next spot: #{totalWaitlistCount + 1}</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    className="w-full px-4 py-3 bg-[#F8F8FA] border-2 border-black rounded-xl text-xs text-black placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B53] font-mono"
+                  />
+                </div>
+
+                {waitlistError && (
+                  <div className="p-2.5 bg-red-50 border border-red-300 rounded-xl text-xs text-red-700 font-mono">
+                    {waitlistError}
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  className="w-full py-3 bg-black hover:bg-neutral-800 text-white font-bold text-xs rounded-xl shadow-[3px_3px_0px_#FF6B53] hover:shadow-[1px_1px_0px_#FF6B53] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center justify-center gap-2"
+                  disabled={isSubmitting}
+                  className="w-full py-3 bg-black hover:bg-neutral-800 disabled:opacity-75 text-white font-bold text-xs rounded-xl shadow-[3px_3px_0px_#FF6B53] hover:shadow-[1px_1px_0px_#FF6B53] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center justify-center gap-2"
                 >
-                  <Sparkles size={14} className="text-amber-300" />
-                  <span>Request Priority Access</span>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin text-amber-300" />
+                      <span>Reserving Spot...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={14} className="text-amber-300" />
+                      <span>Get My Waitlist Number</span>
+                    </>
+                  )}
                 </button>
+
+                <p className="text-[11px] text-center text-neutral-400 font-mono">
+                  🔒 Zero spam. 100% encrypted & private.
+                </p>
               </form>
             )}
           </div>
