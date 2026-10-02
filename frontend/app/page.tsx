@@ -16,21 +16,34 @@ import {
   Plus,
   Shield,
   ShieldCheck,
+  Sparkles,
   Terminal,
   Zap,
 } from "lucide-react";
 
 export default function HomePage() {
-  // Accordion state for right column cards (top open by default like the reference)
-  const [openCard, setOpenCard] = useState<"auto-pr" | "manual-fix" | "integrations" | "sandboxes">("auto-pr");
+  // First card ("auto-pr") is expanded on loading by default, and can be shrunk
+  const [openCard, setOpenCard] = useState<string | null>("auto-pr");
   const [fixedState, setFixedState] = useState(false);
   const [prCreated, setPrCreated] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Waitlist modal state
+  const [showWaitlist, setShowWaitlist] = useState(false);
+  const [email, setEmail] = useState("");
+  const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
 
   const copyInstallCmd = () => {
     navigator.clipboard.writeText("npx zerra init");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleWaitlistSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email.trim()) {
+      setWaitlistSubmitted(true);
+    }
   };
 
   return (
@@ -58,19 +71,24 @@ export default function HomePage() {
           <a href="#integrations" className="hover:text-black transition-colors">
             Integrations
           </a>
-          <a href="https://github.com/sjsreehari/zerra" target="_blank" rel="noreferrer" className="hover:text-black transition-colors">
+          <a
+            href="https://github.com/sjsreehari/zerra/blob/main/docs/ARCHITECTURE.md"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-black transition-colors"
+          >
             Docs & Architecture
           </a>
         </nav>
 
-        {/* Right CTA Links */}
+        {/* Right CTA Links - No redirection to local dashboard */}
         <div className="flex items-center gap-4">
-          <Link
-            href="/dashboard"
+          <button
+            onClick={() => setShowWaitlist(true)}
             className="text-sm font-semibold text-neutral-700 hover:text-black px-2 py-1 transition-colors hidden sm:inline-block"
           >
-            Local Console
-          </Link>
+            Join Waitlist
+          </button>
           <a
             href="https://github.com/sjsreehari/zerra"
             target="_blank"
@@ -101,12 +119,13 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-1">
-              <Link
-                href="/dashboard"
+              <button
+                onClick={() => setShowWaitlist(true)}
                 className="px-6 py-3.5 bg-black hover:bg-neutral-800 text-white font-bold text-sm rounded-xl shadow-[4px_4px_0px_#FF6B53] hover:shadow-[2px_2px_0px_#FF6B53] hover:translate-x-[2px] hover:translate-y-[2px] transition-all inline-flex items-center gap-2"
               >
-                <span>Open Local Dashboard</span>
-              </Link>
+                <span>Join the Waitlist</span>
+                <ArrowRight size={15} />
+              </button>
 
               <button
                 onClick={copyInstallCmd}
@@ -182,7 +201,7 @@ export default function HomePage() {
             {/* Read full documentation footer link */}
             <div className="pt-2">
               <a
-                href="https://github.com/sjsreehari/zerra"
+                href="https://github.com/sjsreehari/zerra/blob/main/docs/ARCHITECTURE.md"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 text-xs font-bold text-black group hover:text-[#FF6B53] transition-colors"
@@ -197,10 +216,10 @@ export default function HomePage() {
 
           {/* Right Column: Stacked Cards (Matching the Red Card + White Accordion in reference) */}
           <div className="lg:col-span-5 space-y-5">
-            {/* Card 1: Vibrant Coral Accent Card (Like "Send money" card in reference image) */}
+            {/* Card 1: Vibrant Coral Accent Card (Expanded on load by default, and can shrink) */}
             <div
               className="bg-[#FF6B53] text-white border-2 border-black rounded-[32px] p-7 shadow-[6px_6px_0px_#111] transition-all cursor-pointer"
-              onClick={() => setOpenCard(openCard === "auto-pr" ? ("" as any) : "auto-pr")}
+              onClick={() => setOpenCard(openCard === "auto-pr" ? null : "auto-pr")}
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-bold tracking-tight text-white">
@@ -208,6 +227,10 @@ export default function HomePage() {
                 </h3>
                 <button
                   type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenCard(openCard === "auto-pr" ? null : "auto-pr");
+                  }}
                   aria-label="Toggle Auto-PR details"
                   className="w-10 h-10 rounded-full border-2 border-black bg-white text-black flex items-center justify-center shadow-[2px_2px_0px_#111] hover:scale-105 transition-transform shrink-0"
                 >
@@ -245,7 +268,7 @@ export default function HomePage() {
             {/* Card 2: 1-Click Manual Fix Button (Like "Recieve money" in reference image) */}
             <div
               className="bg-white border-2 border-black rounded-[32px] p-6 shadow-[6px_6px_0px_#111] transition-all cursor-pointer"
-              onClick={() => setOpenCard(openCard === "manual-fix" ? ("" as any) : "manual-fix")}
+              onClick={() => setOpenCard(openCard === "manual-fix" ? null : "manual-fix")}
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold tracking-tight text-black">
@@ -253,6 +276,10 @@ export default function HomePage() {
                 </h3>
                 <button
                   type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenCard(openCard === "manual-fix" ? null : "manual-fix");
+                  }}
                   aria-label="Toggle Manual Fix details"
                   className="w-10 h-10 rounded-full border-2 border-black bg-white text-black flex items-center justify-center shadow-[2px_2px_0px_#111] hover:scale-105 transition-transform shrink-0"
                 >
@@ -290,7 +317,7 @@ export default function HomePage() {
             {/* Card 3: WhatsApp, Discord & Slack Integration (Like "Cashback" in reference image) */}
             <div
               className="bg-white border-2 border-black rounded-[32px] p-6 shadow-[6px_6px_0px_#111] transition-all cursor-pointer"
-              onClick={() => setOpenCard(openCard === "integrations" ? ("" as any) : "integrations")}
+              onClick={() => setOpenCard(openCard === "integrations" ? null : "integrations")}
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold tracking-tight text-black">
@@ -298,6 +325,10 @@ export default function HomePage() {
                 </h3>
                 <button
                   type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenCard(openCard === "integrations" ? null : "integrations");
+                  }}
                   aria-label="Toggle Integrations details"
                   className="w-10 h-10 rounded-full border-2 border-black bg-white text-black flex items-center justify-center shadow-[2px_2px_0px_#111] hover:scale-105 transition-transform shrink-0"
                 >
@@ -364,28 +395,29 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Bottom CTA Banner */}
+        {/* Bottom CTA Banner - Cleaned up to Join Waitlist */}
         <div className="bg-black text-white border-2 border-black rounded-[36px] p-8 sm:p-12 shadow-[8px_8px_0px_#FF6B53] flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center md:text-left">
             <h3 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
               Ready to secure your local repositories?
             </h3>
-            <p className="text-sm text-neutral-400 max-w-xl">
-              Install the Zerra CLI or start the local web console at <code className="text-[#FF6B53] font-mono">http://localhost:3000</code>.
+            <p className="text-sm text-neutral-300 max-w-xl">
+              Get early access to autonomous local-first blue-team security and automated verified pull requests.
             </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <Link
-              href="/dashboard"
-              className="px-7 py-3.5 bg-[#FF6B53] text-white font-bold text-sm rounded-xl border-2 border-white shadow-[3px_3px_0px_#FFFFFF] hover:shadow-[1px_1px_0px_#FFFFFF] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+            <button
+              onClick={() => setShowWaitlist(true)}
+              className="px-7 py-3.5 bg-[#FF6B53] text-white font-bold text-sm rounded-xl border-2 border-white shadow-[3px_3px_0px_#FFFFFF] hover:shadow-[1px_1px_0px_#FFFFFF] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center gap-2"
             >
-              Open Dashboard
-            </Link>
+              <span>Join the Waitlist</span>
+              <ArrowRight size={15} />
+            </button>
           </div>
         </div>
 
-        {/* Minimal Footer */}
+        {/* Minimal Footer - Direct link to ARCHITECTURE.md and no local dashboard link */}
         <footer className="pt-8 border-t border-neutral-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-500 font-mono">
           <div>
             © 2026 Zerra Security Platform. Open source under GPL-3.0.
@@ -394,15 +426,83 @@ export default function HomePage() {
             <a href="https://github.com/sjsreehari/zerra" target="_blank" rel="noreferrer" className="hover:text-black transition-colors">
               GitHub
             </a>
-            <Link href="/dashboard" className="hover:text-black transition-colors">
-              Dashboard
-            </Link>
-            <a href="https://github.com/sjsreehari/zerra/blob/main/docs/ARCHITECTURE.md" target="_blank" rel="noreferrer" className="hover:text-black transition-colors">
+            <a
+              href="https://github.com/sjsreehari/zerra/blob/main/docs/ARCHITECTURE.md"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-black transition-colors"
+            >
               Architecture Spec
             </a>
           </div>
         </footer>
       </main>
+
+      {/* Join Waitlist Modal */}
+      {showWaitlist && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setShowWaitlist(false)}
+        >
+          <div
+            className="w-full max-w-md bg-white border-2 border-black rounded-[32px] p-7 sm:p-8 shadow-[8px_8px_0px_#111] space-y-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-[#FF6B53]" />
+                <span className="text-xs font-mono font-bold uppercase text-neutral-500">
+                  Early Access
+                </span>
+              </div>
+              <button
+                onClick={() => setShowWaitlist(false)}
+                className="w-8 h-8 rounded-full border-2 border-black text-black hover:bg-neutral-100 flex items-center justify-center font-bold text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="text-2xl font-black text-black tracking-tight">
+                Join the Zerra Waitlist
+              </h3>
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                Be the first to experience local-first blue-team defense, automated Docker sandbox patch verification, and multi-channel incident alerting.
+              </p>
+            </div>
+
+            {waitlistSubmitted ? (
+              <div className="p-4 bg-emerald-50 border-2 border-emerald-400 rounded-2xl text-center space-y-1">
+                <div className="text-sm font-bold text-emerald-800 flex items-center justify-center gap-1.5">
+                  <Check size={16} /> You&apos;re on the list!
+                </div>
+                <p className="text-xs text-emerald-700">
+                  We&apos;ll reach out to <span className="font-mono font-bold">{email}</span> with your early access invite.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleWaitlistSubmit} className="space-y-3">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your work email..."
+                  className="w-full px-4 py-3 bg-[#F8F8FA] border-2 border-black rounded-xl text-xs text-black placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B53] font-mono"
+                />
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-black hover:bg-neutral-800 text-white font-bold text-xs rounded-xl shadow-[3px_3px_0px_#FF6B53] hover:shadow-[1px_1px_0px_#FF6B53] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center justify-center gap-2"
+                >
+                  <Sparkles size={14} className="text-amber-300" />
+                  <span>Request Priority Access</span>
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
