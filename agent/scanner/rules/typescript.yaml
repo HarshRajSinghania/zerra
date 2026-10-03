@@ -1,0 +1,171 @@
+rules:
+  # ── XSS ────────────────────────────────────────────────────────────────
+  - id: ts-dangerously-set-inner-html
+    title: XSS via dangerouslySetInnerHTML (React/TypeScript)
+    description: dangerouslySetInnerHTML bypasses React's XSS protections. Sanitize HTML before rendering.
+    severity: high
+    languages: [typescript]
+    pattern: 'dangerouslySetInnerHTML\s*=\s*\{'
+    cwe_id: "CWE-79"
+    owasp_category: "A03:2021 Injection"
+    fix_hint: "Use DOMPurify.sanitize() or a trusted sanitization library before passing to dangerouslySetInnerHTML."
+    confidence: 0.90
+
+  - id: ts-innerhtml-assignment
+    title: XSS via innerHTML Assignment (TypeScript)
+    description: Direct innerHTML assignment with dynamic content enables Cross-Site Scripting.
+    severity: high
+    languages: [typescript]
+    pattern: '\.innerHTML\s*=\s*(?!`[^$`]*`)'
+    cwe_id: "CWE-79"
+    confidence: 0.80
+
+  - id: ts-document-write
+    title: XSS via document.write (TypeScript)
+    description: document.write() with user-controlled data is a common XSS vector.
+    severity: high
+    languages: [typescript]
+    pattern: 'document\.write\s*\('
+    cwe_id: "CWE-79"
+    confidence: 0.85
+
+  # ── Prototype Pollution ────────────────────────────────────────────────
+  - id: ts-prototype-pollution-merge
+    title: Prototype Pollution via Deep Merge (TypeScript)
+    description: Merging user-supplied objects with __proto__ key can pollute the prototype chain.
+    severity: high
+    languages: [typescript]
+    pattern: 'Object\.assign\s*\(\s*(?:target|obj|result|config)\s*,\s*(?:body|req\.body|data|input)'
+    cwe_id: "CWE-1321"
+    confidence: 0.70
+
+  # ── Eval / Code Injection ──────────────────────────────────────────────
+  - id: ts-eval-usage
+    title: Code Injection via eval() (TypeScript)
+    description: eval() executes arbitrary strings as code and should never be used with user input.
+    severity: critical
+    languages: [typescript]
+    pattern: '\beval\s*\('
+    cwe_id: "CWE-95"
+    owasp_category: "A03:2021 Injection"
+    fix_hint: "Replace eval() with JSON.parse() for data, or refactor to avoid dynamic code execution."
+    confidence: 0.90
+
+  - id: ts-new-function
+    title: Code Injection via new Function() (TypeScript)
+    description: new Function() with user-controlled strings enables arbitrary code execution.
+    severity: critical
+    languages: [typescript]
+    pattern: 'new\s+Function\s*\('
+    cwe_id: "CWE-95"
+    confidence: 0.85
+
+  # ── SQL Injection (Node.js ORM) ────────────────────────────────────────
+  - id: ts-raw-sql-template
+    title: SQL Injection via Template Literal Query (TypeScript)
+    description: Template literals in raw SQL queries are vulnerable to injection if they include user data.
+    severity: high
+    languages: [typescript]
+    pattern: '(?:query|db\.raw|knex\.raw|sequelize\.query)\s*\(`[^`]*\$\{'
+    cwe_id: "CWE-89"
+    owasp_category: "A03:2021 Injection"
+    fix_hint: "Use parameterized queries: db.raw('SELECT * FROM users WHERE id = ?', [id])"
+    confidence: 0.80
+
+  - id: ts-prisma-raw-query
+    title: SQL Injection via Prisma $queryRawUnsafe (TypeScript)
+    description: $queryRawUnsafe bypasses Prisma's SQL injection protections.
+    severity: high
+    languages: [typescript]
+    pattern: '\.\$queryRawUnsafe\s*\('
+    cwe_id: "CWE-89"
+    fix_hint: "Use $queryRaw with tagged template literals: prisma.$queryRaw`SELECT * WHERE id = ${id}`"
+    confidence: 0.95
+
+  # ── Hardcoded Secrets ──────────────────────────────────────────────────
+  - id: ts-hardcoded-jwt-secret
+    title: Hardcoded JWT Secret (TypeScript)
+    description: Hardcoded JWT signing secrets allow token forgery.
+    severity: critical
+    languages: [typescript]
+    pattern: '(?:jwt\.sign|sign)\s*\([^,]+,\s*[''"][^''"]{8,}[''"]'
+    cwe_id: "CWE-798"
+    fix_hint: "Use process.env.JWT_SECRET or a secrets manager."
+    confidence: 0.80
+
+  - id: ts-process-env-fallback-secret
+    title: Insecure Fallback Secret in Environment Variable (TypeScript)
+    description: Hardcoded fallback secret in process.env OR pattern defeats the purpose of environment variables.
+    severity: high
+    languages: [typescript]
+    pattern: 'process\.env\.\w+\s*\|\|\s*[''"][^''"]{8,}[''"]'
+    cwe_id: "CWE-798"
+    fix_hint: "Throw an error if the environment variable is missing rather than falling back to a hardcoded value."
+    confidence: 0.75
+
+  # ── Path Traversal ─────────────────────────────────────────────────────
+  - id: ts-path-join-user-input
+    title: Path Traversal via path.join with User Input (TypeScript)
+    description: path.join with user-supplied segments can traverse directories.
+    severity: high
+    languages: [typescript]
+    pattern: 'path\.(?:join|resolve)\s*\([^)]*(?:req\.(?:params|query|body)|body\.)'
+    cwe_id: "CWE-22"
+    owasp_category: "A01:2021 Broken Access Control"
+    fix_hint: "Resolve the path and verify it is within an allowed directory using path.relative()."
+    confidence: 0.75
+
+  # ── SSRF ───────────────────────────────────────────────────────────────
+  - id: ts-fetch-user-controlled-url
+    title: Potential SSRF via fetch with User-Supplied URL (TypeScript)
+    description: Making HTTP requests to URLs from user input can enable Server-Side Request Forgery.
+    severity: high
+    languages: [typescript]
+    pattern: 'fetch\s*\(\s*(?:req\.(?:body|query|params)|body\.|params\.)'
+    cwe_id: "CWE-918"
+    fix_hint: "Validate and allowlist URLs before making server-side HTTP requests."
+    confidence: 0.70
+
+  # ── Insecure Cookie / Session ──────────────────────────────────────────
+  - id: ts-cookie-no-httponly
+    title: Cookie Missing HttpOnly Flag (TypeScript)
+    description: Cookies without HttpOnly can be stolen via XSS attacks.
+    severity: medium
+    languages: [typescript]
+    pattern: 'res\.(?:cookie|setCookie)\s*\([^)]+\)'
+    negative_pattern: 'httpOnly\s*:\s*true'
+    cwe_id: "CWE-1004"
+    fix_hint: "Set httpOnly: true in cookie options to prevent client-side access."
+    confidence: 0.65
+
+  - id: ts-cookie-no-secure
+    title: Cookie Missing Secure Flag (TypeScript)
+    description: Cookies without Secure flag can be transmitted over unencrypted HTTP.
+    severity: medium
+    languages: [typescript]
+    pattern: 'res\.(?:cookie|setCookie)\s*\([^)]+\)'
+    negative_pattern: 'secure\s*:\s*true'
+    cwe_id: "CWE-614"
+    fix_hint: "Set secure: true in cookie options to ensure cookies are only sent over HTTPS."
+    confidence: 0.60
+
+  # ── Open Redirect ──────────────────────────────────────────────────────
+  - id: ts-open-redirect
+    title: Open Redirect via User-Supplied URL (TypeScript/Express)
+    description: Redirecting to user-controlled URLs enables phishing attacks.
+    severity: medium
+    languages: [typescript]
+    pattern: 'res\.redirect\s*\(\s*(?:req\.(?:query|body|params)|body\.)'
+    cwe_id: "CWE-601"
+    fix_hint: "Validate redirect URLs against an allowlist of trusted domains."
+    confidence: 0.75
+
+  # ── Insecure deserialization ────────────────────────────────────────────
+  - id: ts-serialize-javascript-user-data
+    title: XSS via serialize-javascript with User Data (TypeScript)
+    description: Passing user-controlled data to serialize() can generate XSS payloads.
+    severity: high
+    languages: [typescript]
+    pattern: 'serialize\s*\(\s*(?:req\.|body\.|user\.|data\.)'
+    cwe_id: "CWE-502"
+    confidence: 0.70
