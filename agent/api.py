@@ -1017,3 +1017,340 @@ def dashboard_stats():
     stats = db.get_stats()
     stats["active_channels"] = _get_notifier().active_channels
     return stats
+
+
+# ──────────────────────────────────────────────────────────
+# Async Scan Queue
+# ──────────────────────────────────────────────────────────
+
+from agent.queue import scan_queue
+
+@app.post("/v1/queue/scan")
+async def enqueue_scan(config: ScanConfig):
+    """Enqueue a scan job and return immediately with a job ID."""
+    job = await scan_queue.enqueue(config)
+    return job.to_dict()
+
+
+@app.post("/v1/queue/repos/{repo_id}/scan")
+async def enqueue_repo_scan(repo_id: str, body: ScanTrigger | None = None):
+    """Enqueue a scan for a registered repository (non-blocking)."""
+    db = get_db()
+    repo = db.get_repo(repo_id)
+    if not repo:
+        raise HTTPException(status_code=404, detail="Repository not found")
+    mode_str = (body.mode if body else repo.get("scan_mode", "standard"))
+    branch = (body.branch if body and body.branch else repo.get("branch", "main"))
+    config = ScanConfig(
+        repo_url=repo["url"],
+        branch=branch,
+        mode=ScanMode(mode_str),
+        github_token=repo.get("github_token"),
+    )
+    job = await scan_queue.enqueue(config, repo_id=repo_id)
+    return job.to_dict()
+
+
+@app.get("/v1/queue/jobs")
+def list_queue_jobs(limit: int = 50):
+    """List recent scan queue jobs."""
+    return scan_queue.list_jobs(limit=limit)
+
+
+@app.get("/v1/queue/jobs/{job_id}")
+def get_queue_job(job_id: str):
+    """Get the status of a queued scan job."""
+    job = scan_queue.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return job.to_dict()
+
+
+@app.get("/v1/queue/stats")
+def queue_stats():
+    """Return scan queue statistics."""
+    return scan_queue.stats()
+
+
+# ──────────────────────────────────────────────────────────
+# Credential Vault
+# ──────────────────────────────────────────────────────────
+
+from agent.vault import vault
+
+
+class VaultSetRequest(BaseModel):
+    key: str
+    value: str
+
+
+class VaultGithubTokenRequest(BaseModel):
+    repo_url: str
+    token: str
+
+
+@app.get("/v1/vault/keys")
+def list_vault_keys():
+    """List all stored credential keys (never returns values)."""
+    return {"keys": vault.list_keys()}
+
+
+@app.post("/v1/vault/set")
+def vault_set(body: VaultSetRequest):
+    """Store a credential in the vault."""
+    vault.set(body.key, body.value)
+    return {"status": "stored", "key": body.key}
+
+
+@app.delete("/v1/vault/keys/{key}")
+def vault_delete(key: str):
+    """Delete a stored credential."""
+    vault.delete(key)
+    return {"status": "deleted", "key": key}
+
+
+@app.post("/v1/vault/github-token")
+def store_github_token(body: VaultGithubTokenRequest):
+    """Store a GitHub token scoped to a repository URL."""
+    vault.set_github_token(body.repo_url, body.token)
+    return {"status": "stored", "repo_url": body.repo_url}
+
+
+@app.get("/v1/vault/github-token")
+def get_github_token(repo_url: str):
+    """Check if a GitHub token is stored for a repo URL (returns boolean only)."""
+    has_token = vault.has(f"github-token:{repo_url.rstrip('/').lower().replace('https://', '').replace('http://', '')}")
+    return {"repo_url": repo_url, "has_token": has_token}
+
+
+# ──────────────────────────────────────────────────────────
+# Policy Evaluation
+# ──────────────────────────────────────────────────────────
+
+from agent.policy_engine import get_policy_engine
+
+
+@app.post("/v1/policy/evaluate/{scan_id}")
+def evaluate_policy(scan_id: str):
+    """Evaluate a completed scan against the project security policy (zerra.yml)."""
+    db = get_db()
+    scan_data = db.get_scan(scan_id)
+    if not scan_data:
+        raise HTTPException(status_code=404, detail="Scan not found")
+
+    from agent.scanner.models import ScanResult
+    try:
+        result = ScanResult.model_validate(scan_data)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Could not parse scan result: {exc}")
+
+    engine = get_policy_engine()
+    policy_result = engine.evaluate(result)
+    return {
+        "scan_id": scan_id,
+        "policy_result": policy_result.to_dict(),
+        "grade": result.security_score,
+    }
+
+
+@app.get("/v1/policy/config")
+def get_policy_config():
+    """Return the currently loaded policy configuration."""
+    engine = get_policy_engine()
+    return engine._config
+
+
+@app.post("/v1/policy/reload")
+def reload_policy():
+    """Hot-reload the zerra.yml policy file."""
+    engine = get_policy_engine()
+    engine.reload()
+    return {"status": "reloaded", "config": engine._config}
+
+
+# ──────────────────────────────────────────────────────────
+# Sandbox Status
+# ──────────────────────────────────────────────────────────
+
+from agent.sandbox import get_sandbox
+
+
+@app.get("/v1/sandbox/status")
+def sandbox_status():
+    """Check if Docker sandbox is available for patch verification."""
+    from agent.sandbox import _check_docker
+    available = _check_docker()
+    return {
+        "available": available,
+        "message": "Docker is ready for patch verification sandboxing" if available
+                   else "Docker not found — install Docker Desktop to enable sandbox verification",
+    }
+
+
+@app.post("/v1/sandbox/cleanup")
+def sandbox_cleanup():
+    """Remove any stale Zerra sandbox containers."""
+    removed = get_sandbox().cleanup_stale_containers()
+    return {"removed_containers": removed}
+
+
+# ──────────────────────────────────────────────────────────
+# Webhook Security (HMAC-verified GitHub webhooks)
+# ──────────────────────────────────────────────────────────
+
+from fastapi import Request
+from agent.webhook_security import verify_github_signature
+
+
+@app.post("/v1/webhooks/github/secure")
+async def github_webhook_secure(
+    request: Request,
+    x_github_event: str | None = Header(default=None),
+    x_hub_signature_256: str | None = Header(default=None),
+):
+    """HMAC-verified GitHub webhook endpoint.
+
+    Requires GITHUB_WEBHOOK_SECRET env var. Falls back to /v1/webhooks/github
+    if the secret is not configured (permissive dev mode).
+    """
+    body = await request.body()
+    verify_github_signature(body, x_hub_signature_256, strict=False)
+
+    try:
+        import json as _json
+        payload = _json.loads(body)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON in webhook body")
+
+    event_type = x_github_event or "push"
+    db = get_db()
+    events = parse_webhook(event_type, payload)
+    results = []
+    monitored_repos = db.list_repos()
+
+    for event in events:
+        for repo in monitored_repos:
+            if event.repo_full_name in repo["url"] or repo["url"] in event.repo_url:
+                config = ScanConfig(
+                    repo_url=event.repo_url,
+                    branch=event.branch or repo.get("branch", "main"),
+                    commit_sha=event.commit_sha,
+                    mode=ScanMode(repo.get("scan_mode", "standard")),
+                    github_token=repo.get("github_token") or vault.get_github_token(repo["url"]),
+                )
+                # Enqueue instead of blocking
+                job = await scan_queue.enqueue(config, repo_id=repo["id"])
+                results.append({
+                    "repo": event.repo_full_name,
+                    "job_id": job.id,
+                    "status": "queued",
+                })
+                break
+
+    return {"event": event_type, "processed": len(results), "results": results}
+
+
+# ──────────────────────────────────────────────────────────
+# LLM-powered Fix Generation
+# ──────────────────────────────────────────────────────────
+
+from agent.llm_fix import generate_fix_with_llm
+
+
+class LLMFixRequest(BaseModel):
+    file_content: str | None = None
+
+
+@app.post("/v1/findings/{finding_id}/llm-fix")
+async def generate_llm_fix(finding_id: str, body: LLMFixRequest | None = None):
+    """Generate an AI-powered fix suggestion for a finding.
+
+    Uses pattern rules first, then Ollama / Claude / GPT as fallback.
+    """
+    db = get_db()
+    findings = db.list_findings(limit=1000)
+    target = next((f for f in findings if f["id"] == finding_id), None)
+    if not target:
+        raise HTTPException(status_code=404, detail="Finding not found")
+
+    from agent.scanner.models import Finding as FindingModel, Severity, VulnerabilityType, FindingStatus
+    try:
+        finding_obj = FindingModel(
+            id=target["id"],
+            title=target["title"],
+            description=target["description"],
+            severity=Severity(target["severity"]),
+            vulnerability_type=VulnerabilityType(target["vulnerability_type"]),
+            cwe_id=target.get("cwe_id"),
+            cvss_score=target.get("cvss_score"),
+            owasp_category=target.get("owasp_category"),
+            file_path=target.get("file_path"),
+            line_start=target.get("line_start"),
+            line_end=target.get("line_end"),
+            code_snippet=target.get("code_snippet"),
+            rule_id=target.get("rule_id"),
+            status=FindingStatus(target.get("status", "open")),
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Could not parse finding: {exc}")
+
+    file_content = body.file_content if body else None
+    fix = await generate_fix_with_llm(finding_obj, file_content)
+
+    if not fix:
+        return {
+            "finding_id": finding_id,
+            "fix": None,
+            "message": "No fix available for this finding. Configure OLLAMA_BASE_URL, ANTHROPIC_API_KEY, or OPENAI_API_KEY to enable AI fixes.",
+        }
+
+    return {
+        "finding_id": finding_id,
+        "fix": {
+            "file_path": fix.file_path,
+            "original_code": fix.original_code,
+            "fixed_code": fix.fixed_code,
+            "explanation": fix.explanation,
+        },
+    }
+
+
+@app.get("/v1/llm/backends")
+def llm_backends_status():
+    """Report which LLM backends are configured and available."""
+    ollama_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+    has_anthropic = bool(os.environ.get("ANTHROPIC_API_KEY"))
+    has_openai = bool(os.environ.get("OPENAI_API_KEY"))
+
+    # Quick Ollama connectivity check
+    ollama_ok = False
+    try:
+        import urllib.request as _ur
+        _ur.urlopen(f"{ollama_url}/api/tags", timeout=2)
+        ollama_ok = True
+    except Exception:
+        pass
+
+    return {
+        "backends": [
+            {
+                "name": "ollama",
+                "configured": True,
+                "available": ollama_ok,
+                "url": ollama_url,
+                "model": os.environ.get("OLLAMA_MODEL", "llama3.2"),
+            },
+            {
+                "name": "anthropic",
+                "configured": has_anthropic,
+                "available": has_anthropic,
+                "model": os.environ.get("ANTHROPIC_MODEL", "claude-haiku-20240307"),
+            },
+            {
+                "name": "openai",
+                "configured": has_openai,
+                "available": has_openai,
+                "model": os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
+            },
+        ]
+    }
