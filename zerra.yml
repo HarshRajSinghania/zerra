@@ -1,0 +1,40 @@
+# Zerra Security Policy
+# Place this file in the root of any repository monitored by Zerra.
+# It controls what scan results will cause a CI/CD gate to fail.
+#
+# Documentation: https://github.com/sjsreehari/zerra/docs/policy.md
+
+version: "1"
+
+policy:
+  # Minimum security grade required to pass (A+, A, B, C, D, F)
+  min_grade: "C"
+
+  # Maximum number of findings at each severity before failing
+  max_critical: 0     # Zero tolerance for critical vulnerabilities
+  max_high: 5
+  max_medium: 20
+
+  # Always fail the gate if new hardcoded secrets are found
+  fail_on_new_secrets: true
+
+# Block specific vulnerability classes regardless of count thresholds
+block_rules:
+  - cwe: "CWE-89"           # SQL Injection — always block
+    reason: "SQL injection allows complete database compromise"
+  - cwe: "CWE-798"          # Hardcoded Credentials — always block
+    reason: "Hardcoded secrets must never reach version control"
+  - cwe: "CWE-502"          # Insecure Deserialization — always block
+    reason: "Deserialization vulnerabilities allow RCE"
+  - owasp: "A03:2021"       # Injection category
+    reason: "All injection vulnerabilities are high-impact"
+
+# Suppression rules — known false positives or accepted risks
+# Each suppression can target a rule_id, file_path, or both.
+# Add `expires: "YYYY-MM-DD"` to auto-remove after a date.
+suppressions: []
+  # Example:
+  # - rule_id: "high-entropy"
+  #   file_path: "tests/fixtures/"
+  #   reason: "Test fixtures intentionally contain high-entropy strings"
+  #   expires: "2027-06-01"
