@@ -1,1 +1,40 @@
-{"name":"@zerra/cli","version":"0.1.0","private":true,"type":"module","bin":{"zerra":"dist/index.js"},"scripts":{"build":"tsc -p tsconfig.json","test":"vitest run","start":"tsx src/index.ts"},"dependencies":{"commander":"^12.1.0","keytar":"^7.9.0"},"devDependencies":{"@types/node":"^22.10.2","typescript":"^5.7.2","vitest":"^2.1.8"}}
+{
+  "name": "@zerra/cli",
+  "version": "0.2.0",
+  "description": "Zerra — Local-first blue-team security platform CLI",
+  "keywords": ["security", "sast", "sca", "secrets", "blue-team", "local-first"],
+  "homepage": "https://github.com/sjsreehari/zerra#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sjsreehari/zerra.git",
+    "directory": "cli"
+  },
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "bin": {
+    "zerra": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build",
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "keytar": "^7.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

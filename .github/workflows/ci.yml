@@ -91,13 +91,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd agent
           pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-asyncio
+          pip install -r agent/requirements.txt
+          pip install pytest pytest-asyncio httpx
 
-      - name: Run pytest
-        run: cd agent && pytest tests/ -v --tb=short
+      - name: Run pytest (all agent tests)
+        run: pytest agent/tests/ -v --tb=short --asyncio-mode=auto
+
 
   # ─── Go Scanner Worker ────────────────────────────────────────────────────
   go-tests:
