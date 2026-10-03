@@ -1,0 +1,127 @@
+rules:
+  # ── SQL Injection ──────────────────────────────────────────────────────
+  - id: java-sql-injection-concatenation
+    title: SQL Injection via String Concatenation (Java)
+    description: User-supplied data is concatenated directly into a SQL string. Use PreparedStatement with parameterized queries.
+    severity: high
+    languages: [java]
+    pattern: '(query|sql|statement)\s*[+=]+\s*"[^"]*"\s*\+\s*\w'
+    cwe_id: "CWE-89"
+    owasp_category: "A03:2021 Injection"
+    fix_hint: "Use PreparedStatement: conn.prepareStatement(\"SELECT * FROM users WHERE id = ?\"); stmt.setString(1, id);"
+    confidence: 0.85
+
+  - id: java-sql-injection-format
+    title: SQL Injection via String.format (Java)
+    description: String.format used to build SQL queries is vulnerable to injection.
+    severity: high
+    languages: [java]
+    pattern: 'String\.format\s*\(\s*"[^"]*\bSELECT\b[^"]*"'
+    cwe_id: "CWE-89"
+    owasp_category: "A03:2021 Injection"
+    fix_hint: "Replace with PreparedStatement and positional parameters."
+    confidence: 0.80
+
+  # ── Command Injection ──────────────────────────────────────────────────
+  - id: java-runtime-exec
+    title: Command Injection via Runtime.exec (Java)
+    description: Runtime.exec with user-controlled data enables OS command injection.
+    severity: high
+    languages: [java]
+    pattern: 'Runtime\.getRuntime\(\)\.exec\s*\('
+    cwe_id: "CWE-78"
+    owasp_category: "A03:2021 Injection"
+    confidence: 0.80
+
+  - id: java-process-builder-user-input
+    title: Command Injection via ProcessBuilder (Java)
+    description: ProcessBuilder called with unsanitized input enables command injection.
+    severity: high
+    languages: [java]
+    pattern: 'new\s+ProcessBuilder\s*\([^)]*\+[^)]*\)'
+    cwe_id: "CWE-78"
+    confidence: 0.75
+
+  # ── Weak Crypto ────────────────────────────────────────────────────────
+  - id: java-weak-hash-md5
+    title: Weak Hash Algorithm (MD5) in Java
+    description: MD5 is cryptographically broken and unsuitable for passwords or integrity checks.
+    severity: medium
+    languages: [java]
+    pattern: 'MessageDigest\.getInstance\s*\(\s*"MD5"\s*\)'
+    cwe_id: "CWE-327"
+    fix_hint: "Use SHA-256: MessageDigest.getInstance(\"SHA-256\")"
+    confidence: 0.95
+
+  - id: java-weak-hash-sha1
+    title: Weak Hash Algorithm (SHA-1) in Java
+    description: SHA-1 is deprecated for security. Use SHA-256 or SHA-3.
+    severity: medium
+    languages: [java]
+    pattern: 'MessageDigest\.getInstance\s*\(\s*"SHA-1"\s*\)'
+    cwe_id: "CWE-327"
+    fix_hint: "Use SHA-256: MessageDigest.getInstance(\"SHA-256\")"
+    confidence: 0.95
+
+  - id: java-des-cipher
+    title: Weak Encryption (DES/3DES) in Java
+    description: DES and 3DES are deprecated and vulnerable to brute-force attacks. Use AES-256-GCM.
+    severity: high
+    languages: [java]
+    pattern: 'Cipher\.getInstance\s*\(\s*"(?:DES|DESede|3DES)[^"]*"\s*\)'
+    cwe_id: "CWE-327"
+    confidence: 0.90
+
+  # ── Insecure Deserialization ────────────────────────────────────────────
+  - id: java-object-input-stream
+    title: Insecure Deserialization via ObjectInputStream (Java)
+    description: ObjectInputStream can execute arbitrary code during deserialization. Use safe alternatives.
+    severity: critical
+    languages: [java]
+    pattern: 'new\s+ObjectInputStream\s*\('
+    cwe_id: "CWE-502"
+    owasp_category: "A08:2021 Software and Data Integrity Failures"
+    confidence: 0.80
+
+  # ── XXE ────────────────────────────────────────────────────────────────
+  - id: java-xml-external-entity
+    title: XML External Entity (XXE) Injection (Java)
+    description: XML parsing with external entity processing enabled can leak files or enable SSRF.
+    severity: high
+    languages: [java]
+    pattern: '(?:DocumentBuilderFactory|SAXParserFactory|XMLInputFactory)\.newInstance\s*\(\s*\)'
+    negative_pattern: 'setFeature\s*\(\s*"http://xml\.org/sax/features/external-general-entities"\s*,\s*false\s*\)'
+    cwe_id: "CWE-611"
+    owasp_category: "A05:2021 Security Misconfiguration"
+    confidence: 0.70
+
+  # ── Hardcoded Secrets ──────────────────────────────────────────────────
+  - id: java-hardcoded-password
+    title: Hardcoded Password String (Java)
+    description: Hardcoded password literal in source code. Store credentials in secure vaults.
+    severity: high
+    languages: [java]
+    pattern: '(?:password|passwd|secret|credential)\s*=\s*"[^"]{4,}"'
+    cwe_id: "CWE-259"
+    confidence: 0.80
+
+  # ── Path Traversal ─────────────────────────────────────────────────────
+  - id: java-path-traversal
+    title: Path Traversal Vulnerability (Java)
+    description: File access with unsanitized user input can allow directory traversal.
+    severity: high
+    languages: [java]
+    pattern: 'new\s+(?:File|FileInputStream|FileOutputStream)\s*\([^)]*\+[^)]*\)'
+    cwe_id: "CWE-22"
+    owasp_category: "A01:2021 Broken Access Control"
+    confidence: 0.70
+
+  # ── SSRF ───────────────────────────────────────────────────────────────
+  - id: java-url-open-connection
+    title: Potential SSRF via URL.openConnection (Java)
+    description: Opening URLs derived from user input may enable Server-Side Request Forgery.
+    severity: medium
+    languages: [java]
+    pattern: 'new\s+URL\s*\([^)]*\)\s*\.openConnection\s*\(\s*\)'
+    cwe_id: "CWE-918"
+    confidence: 0.65

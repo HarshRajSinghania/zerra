@@ -1,0 +1,39 @@
+# Zerra Agent — Python dependencies
+# Tested with Python 3.11+
+
+# ── Core API ──────────────────────────────────────────────
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.7.0
+pydantic-settings>=2.3.0
+
+# ── HTTP / async ──────────────────────────────────────────
+httpx>=0.27.0
+aiohttp>=3.9.0
+
+# ── Database ─────────────────────────────────────────────
+# SQLite is built-in; no extra package needed
+
+# ── Config / YAML ────────────────────────────────────────
+PyYAML>=6.0.2
+python-dotenv>=1.0.0
+
+# ── Security / Crypto ─────────────────────────────────────
+keyring>=25.0.0          # OS credential vault (Windows Credential Manager, macOS Keychain)
+cryptography>=43.0.0     # AES-GCM local vault fallback
+
+# ── Notifications ─────────────────────────────────────────
+# All notification channels use stdlib (urllib, smtplib) — no extra dep
+
+# ── Observability ─────────────────────────────────────────
+prometheus-fastapi-instrumentator>=7.0.0
+
+# ── LangGraph / LLM (zero-trust engine) ──────────────────
+# Install only if you want AI-assisted threat investigation
+# langgraph>=0.2.0
+# langchain-community>=0.2.0
+# langchain-ollama>=0.1.0
+
+# ── Optional: LLM-powered fix generation ─────────────────
+# anthropic>=0.35.0   # For Claude-based fix suggestions
+# openai>=1.40.0      # For GPT-based fix suggestions

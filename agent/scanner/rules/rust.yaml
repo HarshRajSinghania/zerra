@@ -1,0 +1,95 @@
+rules:
+  # ── Unsafe Memory / Unsound Code ──────────────────────────────────────
+  - id: rust-unsafe-block
+    title: Unsafe Block Usage (Rust)
+    description: 'unsafe' blocks bypass Rust memory safety guarantees. Audit carefully for use-after-free, buffer overflows, and data races.
+    severity: medium
+    languages: [rust]
+    pattern: '\bunsafe\s*\{'
+    cwe_id: "CWE-119"
+    confidence: 0.70
+    fix_hint: "Prefer safe Rust abstractions. If unsafe is required, document the invariants and bound the scope tightly."
+
+  - id: rust-raw-pointer-deref
+    title: Raw Pointer Dereference (Rust)
+    description: Dereferencing raw pointers can cause undefined behavior if the pointer is invalid.
+    severity: medium
+    languages: [rust]
+    pattern: '\*(?:const|mut)\s+\w+\s*=\s*\w+\s+as\s+\*(?:const|mut)'
+    cwe_id: "CWE-476"
+    confidence: 0.65
+
+  # ── Command Injection ──────────────────────────────────────────────────
+  - id: rust-command-from-user-input
+    title: Command Injection via std::process::Command (Rust)
+    description: Building shell commands with user-supplied data enables OS command injection.
+    severity: high
+    languages: [rust]
+    pattern: 'Command::new\s*\([^)]*\)\s*\.\s*arg\s*\('
+    cwe_id: "CWE-78"
+    owasp_category: "A03:2021 Injection"
+    confidence: 0.70
+    fix_hint: "Validate and whitelist all user inputs before passing to Command. Prefer structured API calls over shell commands."
+
+  # ── SQL Injection ──────────────────────────────────────────────────────
+  - id: rust-sql-string-format
+    title: SQL Injection via format! macro (Rust)
+    description: Building SQL queries with format! and user input enables SQL injection.
+    severity: high
+    languages: [rust]
+    pattern: 'format!\s*\(\s*"[^"]*(?:SELECT|INSERT|UPDATE|DELETE)[^"]*\{\}[^"]*"'
+    cwe_id: "CWE-89"
+    owasp_category: "A03:2021 Injection"
+    confidence: 0.85
+    fix_hint: "Use parameterized queries. With sqlx: sqlx::query!(\"SELECT * FROM users WHERE id = $1\", id)"
+
+  # ── Hardcoded Secrets ──────────────────────────────────────────────────
+  - id: rust-hardcoded-secret
+    title: Hardcoded Secret or Key (Rust)
+    description: Hardcoded credentials in Rust source code.
+    severity: high
+    languages: [rust]
+    pattern: '(?:secret|password|api_key|token)\s*=\s*"[^"]{8,}"'
+    cwe_id: "CWE-798"
+    confidence: 0.80
+
+  - id: rust-hardcoded-secret-const
+    title: Hardcoded Secret as const (Rust)
+    description: Hardcoded credentials as const / static literal.
+    severity: high
+    languages: [rust]
+    pattern: 'const\s+[A-Z_]*(?:SECRET|PASSWORD|KEY|TOKEN)[A-Z_]*\s*:\s*&str\s*=\s*"[^"]{4,}"'
+    cwe_id: "CWE-798"
+    confidence: 0.90
+    fix_hint: "Use std::env::var(\"SECRET_KEY\").expect(\"SECRET_KEY not set\") to read from the environment."
+
+  # ── Cryptography ────────────────────────────────────────────────────────
+  - id: rust-weak-rand
+    title: Weak Random Number Generator (Rust)
+    description: rand::thread_rng is suitable for general use but not for cryptographic secrets. Use rand::rngs::OsRng.
+    severity: low
+    languages: [rust]
+    pattern: 'thread_rng\s*\(\s*\)'
+    cwe_id: "CWE-338"
+    fix_hint: "For cryptographic randomness, use rand::rngs::OsRng or the getrandom crate."
+    confidence: 0.55
+
+  # ── Panic / DoS ─────────────────────────────────────────────────────────
+  - id: rust-unwrap-in-production
+    title: Unwrap() May Panic in Production (Rust)
+    description: .unwrap() will panic on None/Err, potentially crashing the service. Use proper error handling.
+    severity: low
+    languages: [rust]
+    pattern: '\.unwrap\s*\(\s*\)'
+    cwe_id: "CWE-248"
+    confidence: 0.50
+    fix_hint: "Replace .unwrap() with ? operator, .unwrap_or_else(), or match-based error handling."
+
+  - id: rust-expect-in-production
+    title: expect() May Panic in Production (Rust)
+    description: .expect() will panic on failure. Handle errors gracefully in production code.
+    severity: info
+    languages: [rust]
+    pattern: '\.expect\s*\(\s*"[^"]*"\s*\)'
+    cwe_id: "CWE-248"
+    confidence: 0.45
