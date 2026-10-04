@@ -1,6 +1,6 @@
 module github.com/sjsreehari/zerra
 
-go 1.22.0
+go 1.25.0
 
 require (
 	github.com/docker/docker v27.3.1+incompatible
