@@ -96,7 +96,7 @@ jobs:
           pip install pytest pytest-asyncio httpx
 
       - name: Run pytest (all agent tests)
-        run: pytest agent/tests/ -v --tb=short --asyncio-mode=auto
+        run: PYTHONPATH=. pytest agent/tests/ -v --tb=short --asyncio-mode=auto
 
 
   # ─── Go Scanner Worker ────────────────────────────────────────────────────
