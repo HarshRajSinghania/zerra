@@ -20,7 +20,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { homedir, platform } from "node:os";
 import { createInterface } from "node:readline";
-import { DOCKER_NOT_RUNNING_MESSAGE, isDockerDaemonRunning } from "./docker";
+import { DOCKER_NOT_RUNNING_MESSAGE, isDockerDaemonRunning } from "./docker.js";
 
 const run = promisify(exec);
 const program = new Command();

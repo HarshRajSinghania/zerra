@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { isDockerDaemonRunning } from "../src/docker";
+import { isDockerDaemonRunning } from "../src/docker.js";
 
 describe("CLI init", () => {
   it("starts the stack with docker compose and checks the daemon first", () => {
